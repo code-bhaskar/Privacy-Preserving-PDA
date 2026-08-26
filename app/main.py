@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.ml_models import model_inference
 from app.scheduler.reminder_scheduler import start_scheduler, stop_scheduler
+from fl.server.routes import router as fl_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(fl_router)   # real federated learning coordinator
 
 
 @app.get("/health", tags=["system"])
