@@ -10,3 +10,11 @@ scikit-learn==1.5.2
 numpy==2.1.1
 python-dateutil==2.9.0.post0
 apscheduler==3.10.4
+
+# --- federated learning / on-device inference ---
+torch==2.13.0
+onnx==1.22.0
+onnxruntime==1.29.0
+requests==2.34.2
+matplotlib==3.11.1
+pytest==9.1.1

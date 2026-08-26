@@ -1,0 +1,5 @@
+target_epsilon,delta,noise_multiplier,final_test_accuracy,final_test_loss,epsilon_spent,rounds,bytes_per_client_uplink,total_uplink_bytes
+inf,1e-05,0.0,0.9555,0.198,0.0,20,272412,817236
+10,1e-05,1.4122,0.3164,614304.6628,10.0,20,272412,817236
+5,1e-05,2.3718,0.2022,2265647.9845,5.0,20,272412,817236
+1,1e-05,9.2811,0.1722,11586109.492,1.0,20,272412,817236
