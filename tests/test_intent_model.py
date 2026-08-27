@@ -16,8 +16,9 @@ EXPECTED_INTENTS = {
 }
 
 
-def test_intent_labels_match_dispatcher():
-    """Assert the model's label space matches the assistant dispatcher exactly."""
+def test_intent_labels_match_dispatcher_and_active_backend():
+    """Assert active_backend is onnx and the model's label space matches the assistant dispatcher exactly."""
+    assert model_inference.active_backend() == "onnx"
     assert set(INTENT_LABELS) == EXPECTED_INTENTS
     assert set(onnx_classifier.intents) == EXPECTED_INTENTS
 
@@ -66,6 +67,8 @@ def test_occlusion_saliency_explanation():
 def test_fallback_to_tfidf_when_onnx_unavailable(monkeypatch):
     monkeypatch.setattr(onnx_classifier, "available", False)
     monkeypatch.setattr(onnx_classifier, "sess", None)
+
+    assert model_inference.active_backend() == "tfidf-fallback"
 
     intent, conf = model_inference.classify("hello there")
     assert intent == "GREETING"

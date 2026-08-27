@@ -1,15 +1,15 @@
 import os
 import random
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import numpy as np
 
 from app.Data_sets.intent.intent_seed import INTENT_DATA, INTENT_LABELS
 from fl.model.net import IntentNet
 from fl.data.dataset import IntentDataset, collate
 
-# Expand seed dataset into ~2000 utterances with realistic variations
+# Expand seed dataset into ~2087 utterances with realistic variations across all 8 intents
 TEMPLATES = {
     "SCHEDULE_EVENT": [
         "schedule a meeting with {who} {when}",
@@ -121,7 +121,7 @@ def build_synthetic_corpus() -> list[tuple[str, int]]:
     rng = random.Random(42)
     for intent, templates in TEMPLATES.items():
         label_id = label_to_id[intent]
-        for _ in range(260):
+        for _ in range(255):
             tpl = rng.choice(templates)
             utt = tpl.format(
                 who=rng.choice(WHOS),
@@ -138,7 +138,8 @@ def build_synthetic_corpus() -> list[tuple[str, int]]:
 def train_and_export(output_path: str = "deployed_models/intent_model.onnx"):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     corpus = build_synthetic_corpus()
-    split = int(len(corpus) * 0.85)
+    total_samples = len(corpus)
+    split = int(total_samples * 0.85)
     train_data, val_data = corpus[:split], corpus[split:]
 
     train_ds = IntentDataset(train_data)
@@ -172,7 +173,8 @@ def train_and_export(output_path: str = "deployed_models/intent_model.onnx"):
         if acc > best_acc:
             best_acc = acc
 
-    print(f"Trained IntentNet validation accuracy: {best_acc * 100:.2f}%")
+    print(f"Trained on {len(train_data)} samples, evaluated on {len(val_data)} held-out samples.")
+    print(f"Held-out test accuracy: {best_acc:.4f} ({best_acc * 100:.2f}%)")
 
     # Export to ONNX
     model.eval()
@@ -190,7 +192,7 @@ def train_and_export(output_path: str = "deployed_models/intent_model.onnx"):
             "offsets": {0: "batch_size"},
             "logits": {0: "batch_size"},
         },
-        opset_version=14,
+        opset_version=18,
     )
     print(f"Exported ONNX model to {output_path} ({os.path.getsize(output_path) / 1024:.1f} KB)")
 

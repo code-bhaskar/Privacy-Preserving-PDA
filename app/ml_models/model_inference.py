@@ -11,6 +11,12 @@ def warm_up() -> None:
         onnx_classifier._load_session()
 
 
+def active_backend() -> str:
+    if onnx_classifier.available and onnx_classifier.sess is not None:
+        return "onnx"
+    return "tfidf-fallback"
+
+
 def classify(text: str) -> tuple[str, float]:
     if onnx_classifier.available and onnx_classifier.sess is not None:
         try:
