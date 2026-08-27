@@ -10,6 +10,11 @@ scikit-learn==1.5.2
 numpy==2.1.1
 python-dateutil==2.9.0.post0
 apscheduler==3.10.4
+bcrypt==5.0.0
+pyjwt==2.13.0
+alembic==1.19.1
+email-validator==2.3.0
+httpx==0.28.1
 
 # --- federated learning / on-device inference ---
 torch==2.13.0
