@@ -15,5 +15,8 @@ class AuditService:
     def list(self, db: Session, user_id: int | None = None, limit: int = 200):
         return audit_repository.list(db, user_id, limit)
 
+    def verify(self, db: Session):
+        return audit_repository.verify_integrity(db)
+
 
 audit_service = AuditService()

@@ -5,7 +5,8 @@ fl_results.json
 venv_app/
 __pycache__/
 *.pyc
-deployed_models/
 logs/
 *.sqlite3
 *.db
+deployed_models/*
+!deployed_models/intent_model.onnx
