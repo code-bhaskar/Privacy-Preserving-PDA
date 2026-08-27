@@ -438,3 +438,37 @@ def test_audit_logs_scoped_to_current_user(client):
     logs_b = client.get("/api/v1/audit", headers={"Authorization": f"Bearer {token_b}"}).json()
     for entry in logs_b:
         assert entry["user_id"] == me_b["id"]
+
+
+def test_federated_routes_unauthenticated(client):
+    assert client.post("/api/v1/federated/round", json={"rounds": 1}).status_code == 401
+    assert client.post("/api/v1/federated/experiment", json={"rounds": 1}).status_code == 401
+    assert client.get("/api/v1/federated/results").status_code == 401
+
+
+def test_federated_round_honest_refusal_when_no_clients(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pwA"})
+    token = client.post("/api/v1/login", json={"email": "alice@example.com", "password": "pwA"}).json()["access_token"]
+    client.post("/api/v1/consent", headers={"Authorization": f"Bearer {token}"},
+                json={"category": ConsentCategory.FEDERATED_TRAINING.value, "granted": True})
+
+    res = client.post(
+        "/api/v1/federated/round",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"rounds": 1, "n_clients": 3},
+    )
+    assert res.status_code == 400
+    assert "No federated learning clients connected" in res.json()["detail"]
+
+
+def test_federated_experiment_honest_refusal_when_no_clients(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pwA"})
+    token = client.post("/api/v1/login", json={"email": "alice@example.com", "password": "pwA"}).json()["access_token"]
+
+    res = client.post(
+        "/api/v1/federated/experiment",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"rounds": 1, "n_clients": 3},
+    )
+    assert res.status_code == 400
+    assert "No federated learning clients connected" in res.json()["detail"]
