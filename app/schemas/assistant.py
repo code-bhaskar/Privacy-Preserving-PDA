@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 
 class CommandRequest(BaseModel):
-    user_id: int
     text: str
 
 
@@ -29,7 +28,6 @@ class MessageIn(BaseModel):
 
 
 class SummarizeRequest(BaseModel):
-    user_id: int
     messages: list[MessageIn]
     max_sentences: int = 3
     persist: bool = True

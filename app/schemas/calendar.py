@@ -3,7 +3,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 class EventCreate(BaseModel):
-    user_id: int
     title: str
     start_time: datetime
     end_time: datetime | None = None
