@@ -8,6 +8,7 @@ class User(Base, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     preferences: Mapped[dict] = mapped_column(JSON, default=dict)
 
     consents = relationship("Consent", back_populates="user", cascade="all, delete-orphan")

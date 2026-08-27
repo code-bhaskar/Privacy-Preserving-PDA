@@ -4,7 +4,6 @@ from app.models.consent import ConsentCategory
 
 
 class ConsentSet(BaseModel):
-    user_id: int
     category: ConsentCategory
     granted: bool
 

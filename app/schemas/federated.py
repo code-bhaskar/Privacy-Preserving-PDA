@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class RoundRequest(BaseModel):
@@ -18,6 +18,7 @@ class ClientContribution(BaseModel):
 
 
 class RoundResult(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     round_id: int
     n_clients: int
     dp_epsilon: float | None
@@ -35,6 +36,7 @@ class ExperimentRequest(BaseModel):
 
 
 class ExperimentPoint(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     epsilon: float | None
     epsilon_label: str
     accuracy: float

@@ -19,3 +19,12 @@ class ConsentDeniedError(HTTPException):
 class ValidationError(HTTPException):
     def __init__(self, detail: str):
         super().__init__(status.HTTP_400_BAD_REQUEST, detail)
+
+
+class InvalidCredentialsError(HTTPException):
+    def __init__(self, detail: str = "Incorrect email or password"):
+        super().__init__(
+            status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            headers={"WWW-Authenticate": "Bearer"},
+        )

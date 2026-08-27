@@ -20,8 +20,8 @@ class AssistantService:
     Intent understanding uses ML; execution of CRUD intents is deterministic.
     """
 
-    def handle(self, db: Session, payload: CommandRequest) -> CommandResponse:
-        consent_service.require(db, payload.user_id, ConsentCategory.ASSISTANT_NLU)
+    def handle(self, db: Session, user_id: int, payload: CommandRequest) -> CommandResponse:
+        consent_service.require(db, user_id, ConsentCategory.ASSISTANT_NLU)
 
         intent, confidence = model_inference.classify(payload.text)
         entities = model_inference.extract(payload.text, intent)
@@ -29,13 +29,13 @@ class AssistantService:
         requires_ml = intent not in NON_ML_EXECUTION_INTENTS
 
         audit_service.record(
-            db, user_id=payload.user_id, action="INTENT_CLASSIFIED",
+            db, user_id=user_id, action="INTENT_CLASSIFIED",
             data_type="assistant_command",
             reason=f"Intent={intent} conf={confidence:.2f}; inference performed locally",
             external_processing=False, processing_location="local",
         )
 
-        action, result = self._dispatch(db, payload, intent, entities)
+        action, result = self._dispatch(db, user_id, payload, intent, entities)
 
         return CommandResponse(
             intent=intent, confidence=round(confidence, 4), requires_ml=requires_ml,
@@ -44,15 +44,15 @@ class AssistantService:
         )
 
     # ---------- deterministic dispatch ----------
-    def _dispatch(self, db: Session, payload: CommandRequest,
+    def _dispatch(self, db: Session, user_id: int, payload: CommandRequest,
                   intent: str, ent: dict):
-        uid = payload.user_id
+        uid = user_id
 
         if intent == "SCHEDULE_EVENT":
             start = datetime.fromisoformat(ent["datetime"]) if ent.get("datetime") \
                 else now_utc() + timedelta(days=1)
-            ev = scheduling_service.create(db, EventCreate(
-                user_id=uid, title=ent.get("title", "Meeting"),
+            ev = scheduling_service.create(db, uid, EventCreate(
+                title=ent.get("title", "Meeting"),
                 participant=ent.get("person"), start_time=start,
                 end_time=start + timedelta(hours=1),
             ), via="assistant")
@@ -64,8 +64,8 @@ class AssistantService:
         if intent == "CREATE_REMINDER":
             due = datetime.fromisoformat(ent["datetime"]) if ent.get("datetime") \
                 else now_utc() + timedelta(hours=1)
-            r = reminder_service.create(db, ReminderCreate(
-                user_id=uid, text=ent.get("task", payload.text), due_time=due,
+            r = reminder_service.create(db, uid, ReminderCreate(
+                text=ent.get("task", payload.text), due_time=due,
             ))
             return "reminder_created", {
                 "id": r.id, "text": r.text, "due_time": r.due_time.isoformat(),

@@ -13,3 +13,5 @@ class AuditLog(Base, TimestampMixin):
     reason: Mapped[str] = mapped_column(Text)
     external_processing: Mapped[bool] = mapped_column(Boolean, default=False)
     processing_location: Mapped[str] = mapped_column(String(20), default="local")
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    integrity_hash: Mapped[str] = mapped_column(String(64), nullable=False)

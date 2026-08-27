@@ -3,7 +3,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ReminderCreate(BaseModel):
-    user_id: int
     text: str
     due_time: datetime
 
