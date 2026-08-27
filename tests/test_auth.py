@@ -472,3 +472,81 @@ def test_federated_experiment_honest_refusal_when_no_clients(client):
     )
     assert res.status_code == 400
     assert "No federated learning clients connected" in res.json()["detail"]
+
+
+def test_logout_revokes_token(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice_logout@test.com", "password": "pw"})
+    token = client.post("/api/v1/login", json={"email": "alice_logout@test.com", "password": "pw"}).json()["access_token"]
+
+    # Verify authenticated call works
+    assert client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+
+    # Logout
+    logout_res = client.post("/api/v1/logout", headers={"Authorization": f"Bearer {token}"})
+    assert logout_res.status_code == 200
+
+    # Subsequent request with revoked token fails with 401
+    post_logout_res = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert post_logout_res.status_code == 401
+    assert "revoked" in post_logout_res.json()["detail"]
+
+
+def test_login_rate_limiting(client):
+    # Attempt 5 wrong logins
+    for _ in range(5):
+        client.post("/api/v1/login", json={"email": "brute_force@test.com", "password": "wrong"})
+
+    # 6th attempt is throttled with 429
+    throttled = client.post("/api/v1/login", json={"email": "brute_force@test.com", "password": "wrong"})
+    assert throttled.status_code == 429
+    assert "locked" in throttled.json()["detail"]
+
+
+def test_raw_db_encryption_at_rest(client, db_session):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice_enc@test.com", "password": "pw"})
+    token = client.post("/api/v1/login", json={"email": "alice_enc@test.com", "password": "pw"}).json()["access_token"]
+    client.post("/api/v1/consent", headers={"Authorization": f"Bearer {token}"},
+                json={"category": ConsentCategory.CALENDAR_DATA.value, "granted": True})
+
+    # Create event and reminder
+    ev_resp = client.post(
+        "/api/v1/events",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"title": "TOP_SECRET_EVENT_TITLE", "start_time": datetime.now(timezone.utc).isoformat()},
+    )
+    assert ev_resp.status_code == 201
+    assert ev_resp.json()["title"] == "TOP_SECRET_EVENT_TITLE"
+
+    rem_resp = client.post(
+        "/api/v1/reminders",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"text": "TOP_SECRET_REMINDER_TEXT", "due_time": datetime.now(timezone.utc).isoformat()},
+    )
+    assert rem_resp.status_code == 201
+    assert rem_resp.json()["text"] == "TOP_SECRET_REMINDER_TEXT"
+
+    # Direct query against DB verifies raw columns are encrypted
+    from app.models.calendar_event import CalendarEvent
+    from app.models.reminder import Reminder
+
+    raw_ev = db_session.query(CalendarEvent).filter(CalendarEvent.id == ev_resp.json()["id"]).first()
+    raw_rem = db_session.query(Reminder).filter(Reminder.id == rem_resp.json()["id"]).first()
+
+    assert "TOP_SECRET" not in raw_ev.title
+    assert "TOP_SECRET" not in raw_rem.text
+
+
+def test_validate_security_keys_boot_refusal(monkeypatch):
+    from app.core.security import validate_security_keys
+
+    # Missing JWT secret
+    monkeypatch.setattr(settings, "JWT_SECRET", None)
+    monkeypatch.setattr(settings, "JWT_SECRET_KEY", None)
+    with pytest.raises(RuntimeError, match="Missing JWT secret key"):
+        validate_security_keys()
+
+    # Missing AES key
+    monkeypatch.setattr(settings, "JWT_SECRET", "validsecret12345678901234567890")
+    monkeypatch.setattr(settings, "AES_MASTER_KEY", None)
+    with pytest.raises(RuntimeError, match="Missing AES master key"):
+        validate_security_keys()

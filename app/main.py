@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.security import validate_security_keys
 from app.ml_models import model_inference
 from app.scheduler.reminder_scheduler import start_scheduler, stop_scheduler
 from fl.server.routes import router as fl_router
@@ -16,8 +17,9 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    model_inference.warm_up()      # train intent model at boot
+    validate_security_keys()       # Refuse boot without mandatory cryptographic keys
+    init_db()                      # Refuse boot without applied migrations
+    model_inference.warm_up()      # warm up intent model
     start_scheduler()
     yield
     stop_scheduler()

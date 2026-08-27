@@ -8,7 +8,34 @@ from app.core.config import settings
 _NONCE_LEN = 12
 
 
+def validate_security_keys() -> None:
+    """Refuse application boot if mandatory security secrets are not configured."""
+    jwt_secret = settings.get_jwt_secret()
+    if not jwt_secret:
+        raise RuntimeError(
+            "Application refused to boot: Missing JWT secret key. "
+            "Set JWT_SECRET or JWT_SECRET_KEY in environment or .env."
+        )
+
+    if not settings.AES_MASTER_KEY:
+        raise RuntimeError(
+            "Application refused to boot: Missing AES master key. "
+            "Set AES_MASTER_KEY (32 bytes base64) in environment or .env."
+        )
+
+    try:
+        key = base64.b64decode(settings.AES_MASTER_KEY)
+        if len(key) != 32:
+            raise ValueError("AES_MASTER_KEY must decode to exactly 32 bytes")
+    except Exception as e:
+        raise RuntimeError(
+            f"Application refused to boot: Invalid AES_MASTER_KEY ({e})."
+        )
+
+
 def _master_key() -> bytes:
+    if not settings.AES_MASTER_KEY:
+        raise ValueError("AES_MASTER_KEY is not set")
     key = base64.b64decode(settings.AES_MASTER_KEY)
     if len(key) != 32:
         raise ValueError("AES_MASTER_KEY must decode to exactly 32 bytes")

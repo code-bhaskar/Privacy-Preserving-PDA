@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.controllers.user_controller import user_controller
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, oauth2_scheme, revoke_token
 from app.core.database import get_db
 from app.core.exceptions import NotFoundError
 from app.models.user import User
@@ -20,6 +20,16 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     return user_controller.login(db, payload)
+
+
+@router.post("/logout")
+def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+):
+    """Revoke active JWT bearer token."""
+    revoke_token(token)
+    return {"message": "Successfully logged out"}
 
 
 @router.get("/users/me", response_model=UserRead)

@@ -10,25 +10,34 @@ A local-first, privacy-preserving personal digital assistant backend built with 
    - Direct `bcrypt` password hashing with 72-byte truncation protection.
    - HS256 JWT token issuance and validation.
    - Resource access strictly scoped to authenticated caller; unauthorized cross-user queries return `404 Not Found` to prevent entity enumeration.
+   - Rate limiting on `POST /api/v1/login` (maximum 5 failed attempts per window, returning `HTTP 429 Too Many Requests`).
+   - Token revocation blocklist with `POST /api/v1/logout`.
 
-2. **On-Device Class Intent Classifier (< 1 ms)**:
-   - PyTorch `IntentNet` model trained on 8 assistant intent classes and exported to **ONNX**.
+2. **Data Encryption at Rest (AES-256-GCM)**:
+   - Calendar event titles, reminder texts, and private messages are encrypted at rest with AES-256-GCM using individual user AAD (`str(user_id)`).
+   - Audit log entries do not leak plaintext titles or message contents in audit reasons.
+   - Application strictly refuses to boot if `JWT_SECRET` / `JWT_SECRET_KEY` or `AES_MASTER_KEY` is missing or invalid.
+
+3. **On-Device Class Intent Classifier (< 1 ms)**:
+   - PyTorch `IntentNet` model trained on 8 assistant intent classes and exported to **ONNX** (`deployed_models/intent_model.onnx`).
    - Executed via ONNX Runtime CPUExecutionProvider (pinned to single thread to mirror on-device mobile environments).
-   - Local extractive message summarization (AES-256-GCM encryption at rest for stored messages).
-   - Occlusion saliency token attribution for model explainability.
+   - Local extractive message summarization (no external cloud API transmissions).
+   - Occlusion saliency token attribution for model explainability (`"occlusion saliency attribution (not SHAP/LIME)"`).
 
-3. **Tamper-Evident Audit Logging**:
+4. **Tamper-Evident Audit Logging**:
    - Append-only database triggers (PostgreSQL & SQLite) rejecting `UPDATE` and `DELETE` queries.
    - Sequential SHA-256 cryptographic hash chaining (`prev_hash` -> `integrity_hash`).
    - Audit verification endpoint (`GET /api/v1/audit/verify`) detecting any manual database tampering.
+   - Strict boot verification: application refuses to boot if database is un-migrated (`check_db_migrated()`).
 
-4. **Cryptographic Federated Learning & Secure Aggregation**:
+5. **Cryptographic Federated Learning & Secure Aggregation**:
    - Independent OS client processes communicating over HTTP.
    - **Bonawitz et al. CCS'17** secure aggregation protocol:
      - X25519 ECDH for pairwise key agreements.
      - ChaCha20 PRG for zero-sum pairwise masking mod $2^{32}$.
      - Shamir $(t, n)$ threshold secret sharing for graceful dropout recovery.
    - Client-level Differential Privacy with Rényi DP (RDP) accounting.
+   - Honest refusal: `POST /api/v1/federated/round` returns `HTTP 400` when no clients are connected; never fabricates results.
 
 ---
 
@@ -61,12 +70,17 @@ This automatically boots PostgreSQL, applies all Alembic migrations, and launche
    cp .env.example .env
    ```
 
-3. **Run database migrations**:
+3. **Train intent classification ONNX artifact**:
+   ```bash
+   python scripts/train_assistant_intent.py
+   ```
+
+4. **Run database migrations**:
    ```bash
    alembic upgrade head
    ```
 
-4. **Start the API server**:
+5. **Start the API server**:
    ```bash
    uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
@@ -76,7 +90,7 @@ This automatically boots PostgreSQL, applies all Alembic migrations, and launche
 
 ## Running Test Suite
 
-Run the full automated test suite (69 tests covering authentication, IDOR regression, audit hash chain and triggers, intent classifier, and secure aggregation):
+Run the full automated test suite (73 tests covering authentication, IDOR regression, encryption at rest, audit hash chain and triggers, intent classifier, and secure aggregation):
 
 ```bash
 python3 -m pytest tests/ -v
