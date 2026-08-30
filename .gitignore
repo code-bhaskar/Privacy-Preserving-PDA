@@ -2,11 +2,13 @@
 fl_data/
 fl_results.json
 .venv/
+venv/
 venv_app/
 __pycache__/
 *.pyc
 logs/
 *.sqlite3
 *.db
+# Generated ONNX artifacts. Only the single self-contained model is committed.
 deployed_models/*
 !deployed_models/intent_model.onnx

@@ -21,7 +21,9 @@ def export(weights_hex: str, num_classes: int = 7) -> dict:
     model.load_state_dict(unflatten_state(flat, model.state_dict()))
     model.eval()
 
-    fp32 = f"{OUT_DIR}/intent_fp32.onnx"
+    # Export the fp32 model to the exact path the FastAPI app loads
+    # (app/ml_models/onnx_inference.py -> deployed_models/intent_model.onnx).
+    fp32 = f"{OUT_DIR}/intent_model.onnx"
     torch.onnx.export(
         model,
         (torch.tensor([1, 2, 3], dtype=torch.long),
@@ -32,6 +34,9 @@ def export(weights_hex: str, num_classes: int = 7) -> dict:
         dynamic_axes={"tokens": {0: "n_tok"}, "offsets": {0: "batch"}},
         opset_version=14,
         dynamo=False,
+        # Keep weights inline so there is no separate "*.onnx.data" sidecar
+        # file that must be committed alongside the model.
+        external_data=False,
     )
 
     # INT8 dynamic quantization - the step that makes it phone-deployable

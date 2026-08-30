@@ -60,8 +60,8 @@ This automatically boots PostgreSQL, applies all Alembic migrations, and launche
    ```bash
    git clone https://github.com/code-bhaskar/Privacy-Preserving-PDA.git
    cd Privacy-Preserving-PDA
-   python3 -m venv venv
-   source venv/bin/activate
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt onnxscript
    ```
 

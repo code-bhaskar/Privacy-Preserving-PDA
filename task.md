@@ -1,14 +1,14 @@
 # Real Federated Learning & ONNX Tasks
 
-- `[/]` Create Task list
-- `[ ]` Install new dependencies
-- `[ ]` Implement `fl/protocol/` (shamir, crypto, quantize, secagg)
-- `[ ]` Implement `fl/privacy/` (accountant, dp_client)
-- `[ ]` Implement `fl/model/net.py`
-- `[ ]` Implement `fl/data/` (dataset, prepare)
-- `[ ]` Implement `fl/server/` (coordinator, routes)
-- `[ ]` Implement `fl/client/` (agent, run)
-- `[ ]` Implement `fl/experiments/run_sweep.py`
-- `[ ]` Implement `fl/deploy/` (export_onnx, benchmark)
-- `[ ]` Implement `app/ml_models/onnx_inference.py`
-- `[ ]` Integrate FL router into `app/main.py`
+- `[x]` Create Task list
+- `[x]` Install new dependencies
+- `[x]` Implement `fl/protocol/` (shamir, crypto, quantize, secagg)
+- `[x]` Implement `fl/privacy/` (accountant, dp_client)
+- `[x]` Implement `fl/model/net.py`
+- `[x]` Implement `fl/data/` (dataset, prepare)
+- `[x]` Implement `fl/server/` (coordinator, routes)
+- `[x]` Implement `fl/client/` (agent, run)
+- `[x]` Implement `fl/experiments/run_sweep.py`
+- `[x]` Implement `fl/deploy/` (export_onnx, benchmark)
+- `[x]` Implement `app/ml_models/onnx_inference.py`
+- `[x]` Integrate FL router into `app/main.py`
