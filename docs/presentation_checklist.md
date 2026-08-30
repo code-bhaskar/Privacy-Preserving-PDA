@@ -50,7 +50,7 @@ assert not os.path.exists(p + '.data')
 print('OK - single self-contained model, size KB:', round(os.path.getsize(p) / 1024, 1))
 "
 
-# 4. Confirm the app boots and uses ONNX (no DB errors)
+# 4a. Fast smoke test with SQLite (no external DB needed)
 DATABASE_URL="sqlite:///./ppda.db" .venv/bin/alembic upgrade head
 DATABASE_URL="sqlite:///./ppda.db" .venv/bin/python -c "
 from fastapi.testclient import TestClient
@@ -61,7 +61,17 @@ with TestClient(app) as c:
     assert c.get('/api/v1/fl/round/status').status_code == 200
     assert c.get('/docs').status_code == 200
     assert model_inference.active_backend() == 'onnx'
-print('OK - app boots, /health, /docs and FL status all work')
+print('OK - app boots, /health, /docs and FL status all work (SQLite smoke)')
+"
+
+# 4b. Submission check on PostgreSQL 18 (recommended; replace DB creds)
+DATABASE_URL="postgresql+psycopg://ppda:ppda@localhost:5432/ppda" .venv/bin/alembic upgrade head
+DATABASE_URL="postgresql+psycopg://ppda:ppda@localhost:5432/ppda" .venv/bin/python -c "
+from sqlalchemy import create_engine, text
+from app.core.config import settings
+print('DATABASE_URL dialect:', settings.DATABASE_URL.split(':')[0])
+with create_engine(settings.DATABASE_URL).connect() as c:
+    print('version:', c.execute(text('SELECT version()')).scalar())
 "
 ```
 
@@ -72,9 +82,69 @@ print('OK - app boots, /health, /docs and FL status all work')
 
 ---
 
-## 3. Local live demo (no Docker / no PostgreSQL)
+## 3. PostgreSQL 18 setup (recommended for submission)
 
-The cleanest demo path for a presentation is SQLite + uvicorn.
+The app's `app/main.py` advertises **PostgreSQL 18**, and the append-only audit
+triggers are tested against the PostgreSQL dialect, so for your actual submission run
+**PostgreSQL 18** (not SQLite). There are two supported ways.
+
+### Option A — Docker Compose (fastest, uses `postgres:18-alpine`)
+
+```bash
+docker-compose up --build
+```
+
+This boots PostgreSQL 18, runs `alembic upgrade head`, and starts the API on
+`http://localhost:8000`. The compose file already uses `postgres:18-alpine` and mounts
+the PG18 volume at `/var/lib/postgresql` (the PostgreSQL 18 image changed the data
+directory).
+
+### Option B — Local PostgreSQL 18 + uvicorn
+
+```bash
+# 1. Install PostgreSQL 18 (any supported way for your OS). On Debian/Ubuntu the
+#    official PostgreSQL apt repo provides version 18:
+#    https://www.postgresql.org/download/linux/debian/
+
+# 2. Create the role and database
+sudo -u postgres psql -c "CREATE USER ppda WITH PASSWORD 'ppda';"
+sudo -u postgres psql -c "CREATE DATABASE ppda OWNER ppda;"
+
+# 3. Point the app at it and run migrations
+cp .env.example .env
+# In .env set:
+#   DATABASE_URL=postgresql+psycopg://ppda:ppda@localhost:5432/ppda
+#   JWT_SECRET=<your-own-32+ byte secret>
+#   AES_MASTER_KEY=$(python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())")
+
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt onnxscript
+DATABASE_URL=postgresql+psycopg://ppda:ppda@localhost:5432/ppda alembic upgrade head
+DATABASE_URL=postgresql+psycopg://ppda:ppda@localhost:5432/ppda uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Confirm it really is PostgreSQL 18:
+
+```bash
+sudo -u postgres psql -d ppda -c "SELECT version();"
+# should show PostgreSQL 18.x
+```
+
+> **Tip:** if you want proof on the presentation slide, show `SELECT version()` and
+> then show the append-only trigger working: `UPDATE audit_logs ...` should be rejected
+> by the PostgreSQL trigger.
+
+---
+
+## 4. Quick local fallback — SQLite (demo only, not the submission)
+
+> Note: this title keeps the checklist numbering aligned with the old content below;
+> it is deliberately placed as a fallback, not the submission target.
+
+
+
+Use SQLite only if you are doing a quick smoke test and PostgreSQL 18 is not available.
+Everything is SQLite-compatible, but the *submission* should be PostgreSQL 18.
 
 ```bash
 cp .env.example .env
@@ -115,7 +185,7 @@ Show this sequence to prove the privacy/security claims:
 
 ---
 
-## 4. Federated Learning demo (the centerpiece)
+## 5. Federated Learning demo (the centerpiece)
 
 Reproducible one-shot (downloads SNIPS + runs real client processes):
 
@@ -146,7 +216,7 @@ accuracy is monotone in ε (∞ → 10 → 5 → 1), and at small ε the model i
 
 ---
 
-## 5. What to say honestly (reviewers love this)
+## 6. What to say honestly (reviewers love this)
 
 These are *real* limits, and saying them out loud is stronger than overclaiming:
 
@@ -165,15 +235,16 @@ These are *real* limits, and saying them out loud is stronger than overclaiming:
 
 ---
 
-## 6. Before you push/export the final submission
+## 7. Before you push/export the final submission
 
 - [ ] Run `git status` and confirm no `.env`, `*.db`, `*.sqlite3`, `fl_data/`,
       `logs/`, or `__pycache__` files are staged.
 - [ ] Confirm `deployed_models/intent_model.onnx` is present and self-contained
       (no `.onnx.data`).
 - [ ] Confirm `python -m pytest tests/ -v` = **73 passed**.
-- [ ] Confirm the app boots on a fresh SQLite DB: `alembic upgrade head` +
-      `uvicorn app.main:app`.
+- [ ] Confirm the app boots on a **fresh PostgreSQL 18** database: start PostgreSQL 18,
+      `alembic upgrade head`, then `uvicorn app.main:app`. (SQLite is fine only as a
+      quick smoke test, not the submission path.)
 - [ ] Decide whether to include the full FL results or only the committed
       `results/accuracy_vs_epsilon.png` + `results/metrics_summary.csv`.
       Running the full `scripts/run_fl_demo.sh` can take a while (network + training).
