@@ -1,9 +1,15 @@
 import os
 import random
+import sys
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+
+# Make this script runnable directly from the repository root, e.g.
+#   python scripts/train_assistant_intent.py
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.Data_sets.intent.intent_seed import INTENT_DATA, INTENT_LABELS
 from fl.model.net import IntentNet
@@ -192,7 +198,11 @@ def train_and_export(output_path: str = "deployed_models/intent_model.onnx"):
             "offsets": {0: "batch_size"},
             "logits": {0: "batch_size"},
         },
-        opset_version=18,
+        opset_version=14,
+        dynamo=False,
+        # Keep weights in the single .onnx file. The repo's deployed model must
+        # be self-contained (no external "*.onnx.data" sidecar file).
+        external_data=False,
     )
     print(f"Exported ONNX model to {output_path} ({os.path.getsize(output_path) / 1024:.1f} KB)")
 

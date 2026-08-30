@@ -45,14 +45,15 @@ A local-first, privacy-preserving personal digital assistant backend built with 
 
 ### Prerequisites
 - Python 3.11+
-- PostgreSQL (or SQLite for local development)
+- PostgreSQL 18 (or SQLite for local development only)
 - Docker & Docker Compose (optional)
 
 ### 1. Run with Docker Compose
 ```bash
 docker-compose up --build
 ```
-This automatically boots PostgreSQL, applies all Alembic migrations, and launches the FastAPI service on `http://localhost:8000`.
+This automatically boots **PostgreSQL 18** (`postgres:18-alpine`), applies all Alembic
+migrations, and launches the FastAPI service on `http://localhost:8000`.
 
 ### 2. Local Setup
 
@@ -60,15 +61,27 @@ This automatically boots PostgreSQL, applies all Alembic migrations, and launche
    ```bash
    git clone https://github.com/code-bhaskar/Privacy-Preserving-PDA.git
    cd Privacy-Preserving-PDA
-   python3 -m venv venv
-   source venv/bin/activate
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt onnxscript
    ```
 
-2. **Configure environment**:
+2. **Create a PostgreSQL 18 database** (required for the submission; optional SQLite
+   works for quick smoke tests):
+
+   ```bash
+   sudo -u postgres psql -c "CREATE USER ppda WITH PASSWORD 'ppda';"
+   sudo -u postgres psql -c "CREATE DATABASE ppda OWNER ppda;"
+   ```
+
+   Then configure the environment:
    ```bash
    cp .env.example .env
+   # set DATABASE_URL=postgresql+psycopg://ppda:ppda@localhost:5432/ppda
    ```
+
+   The included `docker-compose.yml` uses `postgres:18-alpine` and does all of this for
+   you automatically.
 
 3. **Train intent classification ONNX artifact**:
    ```bash
