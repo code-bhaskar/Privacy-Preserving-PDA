@@ -1,7 +1,6 @@
 .env
 fl_data/
 fl_results.json
-dist_ppda_backend/
 .venv/
 venv/
 venv_app/
