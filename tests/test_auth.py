@@ -169,6 +169,66 @@ def test_login_unknown_email_uniform_message(client):
     assert res_wrong_pwd.json()["detail"] == res_unknown_email.json()["detail"]
 
 
+# ---------------- OAuth2 password grant (Swagger UI "Authorize" dialog) ----------------
+# Swagger UI implements the OAuth2 password flow by POSTing form-encoded
+# username/password to the token URL. These tests pin that contract.
+
+def test_login_oauth2_password_grant_form(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pw"})
+    # Exact shape of Swagger UI's Authorize request: urlencoded form with
+    # username + password (+ empty scope)
+    res = client.post(
+        "/api/v1/login",
+        data={"username": "alice@example.com", "password": "pw", "scope": ""},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+    # Token issued via the OAuth2 flow works on protected routes
+    me = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {data['access_token']}"})
+    assert me.status_code == 200
+    assert me.json()["email"] == "alice@example.com"
+
+
+def test_login_oauth2_password_grant_email_field(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pw"})
+    res = client.post("/api/v1/login", data={"email": "alice@example.com", "password": "pw"})
+    assert res.status_code == 200
+    assert "access_token" in res.json()
+
+
+def test_login_oauth2_password_grant_wrong_password(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pw"})
+    res = client.post("/api/v1/login", data={"username": "alice@example.com", "password": "wrong"})
+    assert res.status_code == 401
+    assert res.json()["detail"] == "Incorrect email or password"
+
+
+def test_login_oauth2_password_grant_missing_credentials_rejected(client):
+    # Missing password -> 422 (same validation semantics as the JSON path)
+    res = client.post("/api/v1/login", data={"username": "alice@example.com"})
+    assert res.status_code == 422
+    # Missing email/username -> 422
+    res = client.post("/api/v1/login", data={"password": "pw"})
+    assert res.status_code == 422
+    # Non-email username -> 422
+    res = client.post("/api/v1/login", data={"username": "not-an-email", "password": "pw"})
+    assert res.status_code == 422
+
+
+def test_login_multipart_form(client):
+    client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pw"})
+    res = client.post(
+        "/api/v1/login",
+        data={"username": "alice@example.com", "password": "pw"},
+        files={},
+    )
+    assert res.status_code == 200
+    assert "access_token" in res.json()
+
+
 def test_get_me_authenticated(client):
     client.post("/api/v1/users", json={"name": "Alice", "email": "alice@example.com", "password": "pw"})
     token = client.post("/api/v1/login", json={"email": "alice@example.com", "password": "pw"}).json()["access_token"]
