@@ -60,7 +60,30 @@ python -c "from app.ml_models import model_inference; print(model_inference.acti
 
 The ONNX intent model is already committed (`deployed_models/intent_model.onnx`). Retrain it any time with `python scripts/train_assistant_intent.py`.
 
-## 4. Federated Learning + Differential Privacy demo
+## 4. Read your profile by ID
+
+`GET /api/v1/users/{user_id}` takes the ID in the URL path, not in a JSON request body. First register or call `GET /api/v1/users/me` to learn the ID, then log in and send the bearer token:
+
+```bash
+# Registration response includes the generated `id`
+curl -X POST http://localhost:8000/api/v1/users \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com","password":"pw"}'
+
+# Login response includes `access_token`
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"alice@example.com","password":"pw"}' \
+  | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+
+# Replace 1 with the id from registration (or /users/me)
+curl http://localhost:8000/api/v1/users/1 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+The endpoint accepts only the authenticated user's own ID. A different user's ID returns `404` intentionally, so user existence cannot be enumerated. If the ID is not known, use `GET /api/v1/users/me`; both endpoints require authentication.
+
+## 5. Federated Learning + Differential Privacy demo
 
 One script reproduces every published number:
 
@@ -82,7 +105,7 @@ python -m fl.experiments.run_sweep --rounds 20 --local-epochs 1 --clip-norm 20 \
 
 > `POST /api/v1/federated/round` returns **400 until real clients connect** — by design. The API never fabricates results.
 
-## 5. What it proves
+## 6. What it proves
 
 | Target ε | Noise σ | Test accuracy |
 |---:|---:|---:|
@@ -93,7 +116,7 @@ python -m fl.experiments.run_sweep --rounds 20 --local-epochs 1 --clip-norm 20 \
 
 Accuracy is monotone in ε — the privacy–utility trade-off, measured. On-device: 68k params, 269 KB ONNX, p50 latency 0.036 ms, 0 external calls. The server only ever sees masked `uint32` vectors — it has no code path to any individual update.
 
-## 6. Endpoints that matter
+## 7. Endpoints that matter
 
 | Endpoint | Shows |
 |---|---|
@@ -106,7 +129,7 @@ Accuracy is monotone in ε — the privacy–utility trade-off, measured. On-dev
 | `GET /api/v1/privacy/posture` | Implemented vs architecture-only — the honest map |
 | `GET /api/v1/fl/round/status` · `/history` | Live secure-aggregation state machine + (ε, δ) spent |
 
-## 7. If something fails
+## 8. If something fails
 
 | Symptom | Fix |
 |---|---|

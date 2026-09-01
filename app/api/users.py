@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
@@ -113,15 +113,31 @@ def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.get("/users/{user_id}", response_model=UserRead)
+@router.get(
+    "/users/{user_id}",
+    response_model=UserRead,
+    summary="Get the authenticated user by ID",
+    description=(
+        "Pass the user ID as a path parameter, for example "
+        "`GET /api/v1/users/42`. The ID must belong to the authenticated "
+        "user; requests for another user's ID return 404 to prevent user "
+        "enumeration. Use `GET /api/v1/users/me` when the ID is not known."
+    ),
+)
 def get_user(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="The ID returned by registration or GET /api/v1/users/me.",
+        ge=1,
+        examples=[1],
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if current_user.id != user_id:
         raise NotFoundError("User not found")
-    return user_controller.get(db, current_user.id)
+    return user_controller.get(db, user_id)
 
 
 @router.post("/consent", response_model=ConsentRead)
