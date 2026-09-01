@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from app.controllers.user_controller import user_controller
@@ -12,13 +13,88 @@ from app.schemas.user import Token, UserCreate, UserLogin, UserRead
 router = APIRouter(tags=["users"])
 
 
+# Documented request bodies for POST /login. The endpoint accepts two formats,
+# which cannot be declared in one FastAPI signature (Form and Body parameters
+# cannot be mixed), so the OpenAPI requestBody is provided explicitly:
+#   - application/json                  : {"email", "password"}
+#       (regular API clients — original contract, unchanged)
+#   - application/x-www-form-urlencoded : "username"/"email" + "password"
+#       (standard OAuth2 *password grant* — what Swagger UI's "Authorize"
+#        dialog POSTs to the token URL)
+LOGIN_REQUEST_BODY = {
+    "required": True,
+    "content": {
+        "application/json": {
+            "schema": UserLogin.model_json_schema(),
+        },
+        "application/x-www-form-urlencoded": {
+            "schema": {
+                "type": "object",
+                "title": "OAuth2 password grant",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Username",
+                        "description": "The user's email address (OAuth2 'username' field).",
+                    },
+                    "password": {"type": "string", "title": "Password"},
+                },
+                "required": ["username", "password"],
+            },
+        },
+    },
+}
+
+
 @router.post("/users", response_model=UserRead, status_code=201)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     return user_controller.create(db, payload)
 
 
-@router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)):
+@router.post(
+    "/login",
+    response_model=Token,
+    openapi_extra={"requestBody": LOGIN_REQUEST_BODY},
+)
+async def login(request: Request, db: Session = Depends(get_db)):
+    """Authenticate and return a JWT.
+
+    Accepts both:
+    - ``application/json`` with ``{"email", "password"}`` (API clients), and
+    - the standard OAuth2 *password grant* form (``username``/``email`` +
+      ``password``) that Swagger UI's "Authorize" dialog POSTs to the token
+      URL.  Without the form branch the OAuth2 flow always failed with 422,
+      because the dialog sends form data, not JSON.
+    """
+    content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+
+    email: str | None = None
+    password: str | None = None
+
+    if content_type in ("application/x-www-form-urlencoded", "multipart/form-data"):
+        form = await request.form()
+        # OAuth2's credential field is "username"; this app logs in by email,
+        # so accept "email" too for clients that name the field directly.
+        email = form.get("email") or form.get("username")
+        password = form.get("password")
+    elif content_type == "application/json":
+        try:
+            raw = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            raw = None
+        if isinstance(raw, dict):
+            email = raw.get("email")
+            password = raw.get("password")
+
+    try:
+        payload = UserLogin(email=email, password=password)
+    except PydanticValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Login requires a valid 'email' and 'password'",
+        )
+
     return user_controller.login(db, payload)
 
 
