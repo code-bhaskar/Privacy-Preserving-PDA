@@ -10,6 +10,7 @@ from app.core.database import init_db
 from app.core.security import validate_security_keys
 from app.ml_models import model_inference
 from app.scheduler.reminder_scheduler import start_scheduler, stop_scheduler
+from fl.pipeline import shutdown as fl_pipeline_shutdown
 from fl.server.routes import router as fl_router
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI):
     start_scheduler()
     yield
     stop_scheduler()
+    fl_pipeline_shutdown()   # stop any supervised FL client processes
 
 
 app = FastAPI(
@@ -34,14 +36,20 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],   # Angular dev server
+    # Configurable so the Angular demo frontend can be served from a dev server,
+    # a built bundle, or a cloud preview host. Default keeps localhost:4200.
+    allow_origins=settings.cors_origin_list or ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
-app.include_router(fl_router)   # real federated learning coordinator
+# Real federated learning coordinator, mounted IN THIS APP (single pipeline):
+#   /api/v1/fl/*            -> protocol endpoints the client processes speak
+#   /api/v1/federated/*     -> authenticated, audited, DB-backed app endpoints
+#   /api/v1/federated/pipeline/* -> dataset / client / sweep / ONNX controls
+app.include_router(fl_router)
 
 
 @app.get("/health", tags=["system"])

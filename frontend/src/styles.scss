@@ -1,0 +1,131 @@
+/* PPDA demonstration frontend — Bootstrap 5.3.3 dark theme + small house style.
+   Bootstrap is customised through SCSS variables BEFORE the import so the whole
+   kit (buttons, tables, forms, alerts) comes out in the demo's dark palette. */
+
+$primary: #4f8cff;
+$success: #22c55e;
+$danger: #ef4444;
+$warning: #f59e0b;
+$info: #38bdf8;
+$secondary: #64748b;
+
+$body-bg: #070b14;
+$body-color: #e2e8f0;
+
+$card-bg: rgba(13, 21, 36, 0.86);
+$card-border-color: rgba(148, 163, 184, 0.16);
+$card-cap-bg: rgba(9, 14, 25, 0.7);
+$card-cap-color: #e2e8f0;
+
+$input-bg: #0b1220;
+$input-color: #e2e8f0;
+$input-border-color: rgba(148, 163, 184, 0.28);
+$input-placeholder-color: #64748b;
+$input-focus-border-color: #4f8cff;
+$input-focus-box-shadow: 0 0 0 0.2rem rgba(79, 140, 255, 0.18);
+$input-group-addon-bg: #0b1220;
+$input-group-addon-color: #94a3b8;
+$input-group-addon-border-color: rgba(148, 163, 184, 0.28);
+
+$form-check-input-bg: #0b1220;
+$form-check-input-border: 1px solid rgba(148, 163, 184, 0.4);
+$form-check-input-checked-bg-color: #22c55e;
+$form-check-input-checked-border-color: #22c55e;
+
+$table-color: #cbd5e1;
+$table-border-color: rgba(148, 163, 184, 0.1);
+$table-striped-bg: rgba(148, 163, 184, 0.04);
+$table-hover-bg: rgba(79, 140, 255, 0.07);
+
+$border-color: rgba(148, 163, 184, 0.16);
+$hr-color: rgba(148, 163, 184, 0.18);
+$hr-opacity: 1;
+
+$font-family-base:
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+$font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+$border-radius: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-sm: 0.35rem;
+
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: $body-bg;
+  color: $body-color;
+  font-size: 0.9rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars: the demo has a lot of tables and log panes. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Bootstrap outline buttons read poorly on near-black; lift them a little. */
+.btn-outline-light {
+  --bs-btn-color: #cbd5e1;
+  --bs-btn-border-color: rgba(148, 163, 184, 0.35);
+  --bs-btn-hover-bg: rgba(203, 213, 225, 0.12);
+  --bs-btn-hover-border-color: rgba(203, 213, 225, 0.5);
+  --bs-btn-hover-color: #fff;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: #94a3b8;
+  --bs-btn-border-color: rgba(148, 163, 184, 0.3);
+  --bs-btn-hover-bg: rgba(148, 163, 184, 0.14);
+  --bs-btn-hover-color: #e2e8f0;
+}
+
+.form-control,
+.form-select {
+  font-size: 0.84rem;
+}
+
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.78rem;
+}
+
+code {
+  font-family: $font-family-monospace;
+  font-size: 0.85em;
+}
+
+.alert {
+  border-radius: 0.5rem;
+}
+
+/* Utility used across panels. */
+.text-danger {
+  color: #f87171 !important;
+}
+.text-warning {
+  color: #fbbf24 !important;
+}

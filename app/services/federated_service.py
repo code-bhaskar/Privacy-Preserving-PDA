@@ -53,8 +53,14 @@ class FederatedService:
             # Wait for round to complete (clients submit keys, masked updates, reveals)
             start_wait = time.time()
             while coordinator.phase not in (Phase.DONE, Phase.IDLE):
-                if time.time() - start_wait > 60:
-                    raise ValidationError("Federated learning round timed out waiting for client contributions")
+                if time.time() - start_wait > settings.FL_ROUND_TIMEOUT_SECONDS:
+                    raise ValidationError(
+                        f"Federated learning round timed out after "
+                        f"{settings.FL_ROUND_TIMEOUT_SECONDS:.0f}s waiting for client contributions "
+                        f"(phase={coordinator.phase.value}, collected {len(coordinator.masked)}/"
+                        f"{len(coordinator.participants)} masked vectors). Are the client "
+                        f"processes still running?"
+                    )
                 time.sleep(0.1)
 
             if not coordinator.history:

@@ -45,8 +45,40 @@ A local-first, privacy-preserving personal digital assistant backend built with 
 
 ### Prerequisites
 - Python 3.11+
+- Node 20.19+ / 22.12+ / 24+ and npm (for the Angular demo frontend)
 - PostgreSQL 18 (or SQLite for local development only)
 - Docker & Docker Compose (optional)
+
+### 0. The whole demo in one command
+
+Boots the FastAPI backend **with the FL coordinator in-process**, spawns the
+federated learning client processes through the same API, and serves the Angular
+UI on <http://localhost:4200>:
+
+```bash
+cp .env.example .env          # once
+./scripts/run_demo.sh         # Ctrl-C stops backend + clients + UI
+```
+
+Login: `demo@ppda.io` / `DemoPass123!`, then press **Load demo** on the login
+screen — it registers the account, grants all four consent categories and seeds
+a few encrypted records.
+
+Useful overrides:
+
+```bash
+CLIENTS=0 ./scripts/run_demo.sh        # skip FL clients (lighter on RAM)
+FRONTEND=prod ./scripts/run_demo.sh    # serve the optimised bundle
+PORT=8000 UI_PORT=4200 ./scripts/run_demo.sh
+```
+
+The first run downloads the real SNIPS corpus into `fl_data/` and runs the
+Alembic migrations; subsequent runs skip both.
+
+Tabs: **Assistant** (intent + occlusion saliency) · **Scheduler** (encrypted
+calendar/reminders) · **Privacy** (posture + encrypt demo) · **Audit** (hash
+chain) · **Federated pipeline** (dataset → clients → secure-aggregation rounds →
+ε sweep → ONNX export).
 
 ### 1. Run with Docker Compose
 ```bash
@@ -103,7 +135,7 @@ migrations, and launches the FastAPI service on `http://localhost:8000`.
 
 ## Running Test Suite
 
-Run the full automated test suite (73 tests covering authentication, IDOR regression, encryption at rest, audit hash chain and triggers, intent classifier, and secure aggregation):
+Run the full automated test suite (**124 tests** covering authentication, IDOR regression, encryption at rest, audit hash chain and append-only triggers, intent classifier, secure aggregation, the ONNX label-space guards, and the Angular frontend's data contract):
 
 ```bash
 python3 -m pytest tests/ -v
@@ -113,19 +145,86 @@ python3 -m pytest tests/ -v
 
 ## Federated Learning Workflow
 
-1. **Start the Coordinator** (included in FastAPI or standalone):
+Federated learning is **not a separate service**. The Bonawitz secure-aggregation
+coordinator lives inside the same FastAPI process that serves `/api/v1/*`, and
+`/api/v1/federated/pipeline/*` drives the rest of the demo — dataset preparation,
+client process supervision, rounds, the ε sweep and the ONNX export. Only the
+*client* processes are separate, and that isolation is the privacy claim: each
+holds its own shard and the server only ever receives masked uint32 vectors.
+
+Everything below is reachable from the **Federated pipeline** tab; the commands
+are the headless equivalents.
+
+1. **Start the app** (coordinator included — do not start `fl.server.app`):
    ```bash
-   python -m uvicorn fl.server.app:app --port 8000
+   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
 
-2. **Spawn Client Processes** (e.g., 5 independent processes):
+2. **Prepare the dataset** (real SNIPS, non-IID Dirichlet shards):
+   ```bash
+   python -m fl.data.prepare --clients 6 --alpha 0.5
+   ```
+
+3. **Spawn client processes**:
    ```bash
    for i in {0..4}; do
      python -m fl.client.run --client-id $i --server-url http://localhost:8000 &
    done
    ```
 
-3. **Execute Privacy Epsilon Sweep**:
+4. **Run a round / the privacy-utility sweep**:
    ```bash
-   python -m fl.experiments.run_sweep --clients 5 --rounds 10
+   python -m fl.experiments.run_sweep --clients-per-round 3 --rounds 10 \
+       --epsilons none,10,5,1 --out fl_results.json
    ```
+
+5. **Export and benchmark**:
+   ```bash
+   python -m fl.deploy.export_onnx
+   python -m fl.deploy.benchmark
+   ```
+
+### Two ONNX artifacts, deliberately kept apart
+
+| Artifact | Classes | Trained on | Served by |
+|---|---|---|---|
+| `deployed_models/intent_model.onnx` | 8 | assistant intent seed | `POST /assistant/command` |
+| `deployed_models/intent_model_federated.onnx` | 7 | SNIPS (federated) | the FL demo / benchmarking |
+
+`fl.deploy.export_onnx` writes the **federated** artifact by default. It will not
+overwrite the served model unless you pass `--target live`, and even then it
+refuses when the class counts differ: `predict()` maps `argmax` onto
+`INTENT_LABELS[i]`, so serving a 7-class SNIPS model as the 8-class assistant
+model does not merely lose accuracy — it returns *confidently wrong intent
+names*. As a second line of defence, `app/ml_models/onnx_inference.py` measures
+the artifact's output width at load time and marks the model unavailable (falling
+back to the TF-IDF classifier) rather than mislabelling.
+`tests/test_onnx_export_isolation.py` pins both guards.
+
+Regenerate the served assistant model with:
+
+```bash
+python scripts/train_assistant_intent.py
+```
+
+---
+
+## Demo Frontend (Angular 20)
+
+`frontend/` is a demonstration UI for the existing backend — Angular 20.3,
+Bootstrap 5.3.3, HTML5, no backend changes required.
+
+```bash
+cd frontend
+npm ci
+npm start            # http://localhost:4200, proxies /api, /health, /docs to :8000
+npm run build        # optimised bundle in dist/frontend/browser
+```
+
+The app uses relative URLs and the dev-server proxy (`proxy.conf.json`), so it
+never hardcodes a host. `scripts/run_demo.sh` regenerates that proxy config from
+its `PORT` value, so overriding the backend port still works.
+
+Because the templates are the real contract with the backend,
+`tests/test_frontend_contract.py` pins every field shape the UI binds to — a
+renamed or missing response key fails CI instead of silently blanking a panel.

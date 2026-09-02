@@ -23,6 +23,8 @@ class OnnxIntentClassifier:
         self.available = os.path.exists(model_path)
         self.sess = None
         self.size_kb = 0.0
+        # Set when the artifact's class count does not match INTENT_LABELS.
+        self.mismatch: dict | None = None
         if self.available:
             self._load_session()
 
@@ -32,12 +34,28 @@ class OnnxIntentClassifier:
             opts = ort.SessionOptions()
             opts.intra_op_num_threads = 1  # single-core, like a phone
             opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-            self.sess = ort.InferenceSession(
+            sess = ort.InferenceSession(
                 self.model_path, opts, providers=["CPUExecutionProvider"]
             )
+            # Label-space guard. `predict` maps argmax -> INTENT_LABELS[i], so a
+            # model with a different number of classes would not merely be less
+            # accurate, it would confidently return the WRONG intent names (e.g. a
+            # 7-class SNIPS federated export served as the 8-class assistant model).
+            # Refuse such a model and let the TF-IDF fallback take over instead.
+            out_shape = sess.get_outputs()[0].shape
+            n_classes = out_shape[-1] if out_shape else None
+            if not isinstance(n_classes, int) or n_classes != len(self.intents):
+                self.sess = None
+                self.available = False
+                self.mismatch = {"model_classes": n_classes,
+                                 "assistant_classes": len(self.intents)}
+                return
+            self.sess = sess
             self.size_kb = round(os.path.getsize(self.model_path) / 1024, 1)
             self.available = True
+            self.mismatch = None
         except Exception:
+            self.sess = None
             self.available = False
 
     def predict(self, query: str) -> tuple[str, float]:
