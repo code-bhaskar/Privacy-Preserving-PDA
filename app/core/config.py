@@ -12,6 +12,13 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     DEBUG: bool = True
 
+    # Comma-separated browser origins allowed to call the API. The Angular demo
+    # frontend normally reaches the API through its own dev-server proxy
+    # (frontend/proxy.conf.json), which is same-origin and needs no CORS entry;
+    # this list matters when the SPA is opened directly (e.g. a built bundle or
+    # a cloud preview host). "*" is accepted for demo deployments only.
+    CORS_ORIGINS: str = "http://localhost:4200,http://127.0.0.1:4200"
+
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/ppda"
 
     # Authentication — FR-1.2
@@ -29,9 +36,20 @@ class Settings(BaseSettings):
     FL_ROUNDS: int = 5
     FL_CLIP_NORM: float = 1.0
     FL_DP_DELTA: float = 1e-5
+    # How long POST /federated/round waits for real client processes to finish
+    # their masked contributions before refusing the round.
+    FL_ROUND_TIMEOUT_SECONDS: float = 240.0
+    # Loopback URL the in-process coordinator is reachable at. Supervised FL
+    # clients are spawned against this, which is what makes the whole federated
+    # demo a single pipeline (one server, no separate coordinator process).
+    FL_SERVER_URL: str = "http://127.0.0.1:8000"
 
     def get_jwt_secret(self) -> str | None:
         return self.JWT_SECRET or self.JWT_SECRET_KEY
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
 
 @lru_cache

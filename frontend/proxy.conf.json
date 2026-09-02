@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/proxy-conf.json",
+  "/api": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": false,
+    "logLevel": "debug"
+  },
+  "/health": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": false
+  },
+  "/docs": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": false
+  },
+  "/openapi.json": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": false
+  }
+}

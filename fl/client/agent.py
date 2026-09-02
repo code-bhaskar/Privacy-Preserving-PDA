@@ -97,10 +97,15 @@ class FederatedClient:
     # ---------- one full round ----------
     def run_round(self):
         cfg = self._wait("ADVERTISE_KEYS")["config"]
-        if cfg["round_id"] == getattr(self, "_last_round", None):
-            time.sleep(0.5)   # already handled this round; wait for the next
+        handled = getattr(self, "_handled_rounds", None)
+        if handled is None:
+            handled = self._handled_rounds = set()
+        if cfg["round_id"] in handled:
+            time.sleep(0.5)   # already served this round; wait for the next one
             return None
-        self._last_round = cfg["round_id"]
+        handled.add(cfg["round_id"])
+        if len(handled) > 512:   # keep the dedupe set bounded on very long runs
+            self._handled_rounds = set(sorted(handled)[-256:])
         if self.id not in cfg["participants"]:
             # Back off hard: idle pollers otherwise steal CPU from the
             # clients that are actually training this round.

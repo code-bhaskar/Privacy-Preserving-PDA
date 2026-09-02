@@ -83,7 +83,10 @@ class Coordinator:
             self.template = self.model.state_dict()
             self.history = []
             self.accountant = None
-            self.round_id = 0
+            # round_id is deliberately NOT reset: it is the identifier clients use
+            # to tell a new round from one they already served. Reusing ids after a
+            # reset makes long-lived client processes skip the round forever
+            # (they treat it as a duplicate), which stalls epsilon sweeps.
             self.phase = Phase.IDLE
             self._reset_round_state()
             return {"reset": True}

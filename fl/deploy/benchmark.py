@@ -1,4 +1,16 @@
-"""Latency benchmark for the exported on-device model (PRD FR-19)."""
+"""Latency benchmark for the served on-device model (PRD FR-19).
+
+Measures ``app.ml_models.onnx_inference.onnx_classifier`` — i.e.
+``deployed_models/intent_model.onnx``, the 8-class artifact that
+``POST /assistant/command`` actually serves. It deliberately does NOT measure
+``intent_model_federated.onnx``: that is the SNIPS-trained global model produced
+by the FL demo, and reporting its latency as the assistant's would be a
+different claim than the one the product makes.
+
+The queries below are SNIPS-flavoured because that is the corpus the latency
+figures were originally reported against; only timing is measured here, so the
+predicted labels are irrelevant to the result.
+"""
 import json
 
 import numpy as np
