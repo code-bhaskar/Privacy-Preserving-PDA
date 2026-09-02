@@ -1,8 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -42,6 +44,16 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 app.include_router(fl_router)   # real federated learning coordinator
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    """Surface DB constraint violations as structured JSON, not a bare 500."""
+    logging.getLogger("app").exception("Database integrity error on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": "Database integrity error — the operation conflicts with existing data."},
+    )
 
 
 @app.get("/health", tags=["system"])

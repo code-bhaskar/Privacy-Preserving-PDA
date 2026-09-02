@@ -2,6 +2,7 @@ from datetime import datetime
 import hashlib
 from sqlalchemy.orm import Session
 
+from app.core.db_utils import save_with_pk_resync
 from app.models.audit_log import AuditLog
 from app.models.base import utcnow
 
@@ -47,9 +48,7 @@ class AuditRepository:
             created_at=dt,
             **kwargs,
         )
-        db.add(entry)
-        db.commit()
-        db.refresh(entry)
+        save_with_pk_resync(db, entry)
         return entry
 
     def list(self, db: Session, user_id: int | None = None, limit: int = 200) -> list[AuditLog]:

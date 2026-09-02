@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.core.db_utils import save_with_pk_resync
 from app.models.consent import Consent
 from app.repositories.base_repository import BaseRepository
 
@@ -18,11 +19,11 @@ class ConsentRepository(BaseRepository[Consent]):
         row = self.get_one(db, user_id, category)
         if row:
             row.granted = granted
+            db.commit()
+            db.refresh(row)
         else:
             row = Consent(user_id=user_id, category=category, granted=granted)
-            db.add(row)
-        db.commit()
-        db.refresh(row)
+            save_with_pk_resync(db, row)
         return row
 
 

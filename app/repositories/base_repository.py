@@ -1,6 +1,8 @@
 from typing import Generic, TypeVar, Type
 from sqlalchemy.orm import Session
 
+from app.core.db_utils import save_with_pk_resync
+
 T = TypeVar("T")
 
 
@@ -17,9 +19,7 @@ class BaseRepository(Generic[T]):
         return db.query(self.model).filter(self.model.user_id == user_id).all()
 
     def save(self, db: Session, obj: T) -> T:
-        db.add(obj)
-        db.commit()
-        db.refresh(obj)
+        save_with_pk_resync(db, obj)
         return obj
 
     def delete(self, db: Session, obj: T) -> None:
