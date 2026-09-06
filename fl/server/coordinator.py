@@ -13,7 +13,8 @@ from fl.privacy.accountant import PrivacyAccountant, sigma_for_target_epsilon
 from fl.protocol.quantize import dequantize_sum
 from fl.protocol.secagg import ServerSecAgg
 
-DATA_ROOT = "fl_data"
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_ROOT = os.path.join(REPO_ROOT, "fl_data")
 
 
 class Phase(str, Enum):
@@ -71,6 +72,22 @@ class Coordinator:
             return {"client_id": client_id, "model_dim": self.dim,
                     "num_classes": self.num_classes,
                     "registered_clients": len(self.registered)}
+
+    def unregister(self, client_id: int) -> None:
+        """Forget a client that the in-process supervisor has stopped.
+
+        Registration is intentionally idempotent, but retaining a stopped
+        process in the sampling pool makes the next round select a client that
+        can never answer. Directly launched clients are still allowed to remain
+        registered; only the supervisor calls this method for processes it owns.
+        """
+        with self.lock:
+            self.registered.pop(client_id, None)
+
+    def invalidate_dataset_cache(self) -> None:
+        """Make the next evaluation read the test split from disk again."""
+        with self.lock:
+            self._test_rows = None
 
     def reset_experiment(self, drop_registrations: bool = False):
         """Fresh model + fresh privacy ledger (used between epsilon sweeps)."""
@@ -159,8 +176,17 @@ class Coordinator:
     def submit_masked(self, cid: int, vector_hex: str, num_samples: int):
         with self.lock:
             self._require(Phase.COLLECT, cid)
-            self.masked[cid] = np.frombuffer(bytes.fromhex(vector_hex),
-                                             dtype="<u4").copy()
+            if num_samples <= 0:
+                raise RuntimeError("num_samples must be positive")
+            try:
+                raw = bytes.fromhex(vector_hex)
+            except ValueError as exc:
+                raise RuntimeError("masked update is not valid hexadecimal") from exc
+            if len(raw) != self.dim * 4:
+                raise RuntimeError(
+                    f"masked update has {len(raw)} bytes; expected {self.dim * 4}"
+                )
+            self.masked[cid] = np.frombuffer(raw, dtype="<u4").copy()
             self.sample_counts[cid] = num_samples
             if len(self.masked) == len(self.participants):
                 self._close_collection()

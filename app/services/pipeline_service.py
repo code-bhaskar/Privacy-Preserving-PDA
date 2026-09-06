@@ -21,6 +21,7 @@ from fl.pipeline.supervisor import (
     supervisor,
     sweep_runner,
 )
+from fl.server.coordinator import Phase, coordinator
 
 _LOG_ROOT = os.path.join(REPO_ROOT, "logs")
 
@@ -32,6 +33,25 @@ class PipelineService:
         return dataset_job.status()
 
     def prepare_dataset(self, db: Session, clients: int, alpha: float) -> dict:
+        if any(c["alive"] for c in supervisor.list()):
+            raise ValidationError(
+                "Stop the supervised FL clients before replacing the dataset shards."
+            )
+        # Directly launched clients are not visible in supervisor.list(), but
+        # their registration still means a live process may be reading the old
+        # shard. Do not replace files underneath either supervised or manual
+        # clients; the caller can stop them and reset the coordinator first.
+        with coordinator.lock:
+            registered = len(coordinator.registered)
+            phase = coordinator.phase
+        if registered:
+            raise ValidationError(
+                "Stop or unregister all connected FL clients before replacing the dataset shards."
+            )
+        if phase not in (Phase.IDLE, Phase.DONE):
+            raise ValidationError("Wait for the active federated round to finish before replacing the dataset.")
+        if sweep_runner.status().get("running"):
+            raise ValidationError("Wait for the epsilon sweep to finish before replacing the dataset.")
         result = dataset_job.start(clients, alpha)
         if result.get("started"):
             audit_service.record(
@@ -50,6 +70,8 @@ class PipelineService:
 
     def spawn_clients(self, db: Session, count: int, start_id: int,
                       drop_at: str | None, rounds: int) -> dict:
+        if dataset_job.status().get("running"):
+            raise ValidationError("Wait for dataset preparation to finish before spawning clients.")
         if not dataset_status()["ready"]:
             raise ValidationError(
                 "fl_data is not prepared. Prepare the dataset first "
@@ -129,6 +151,8 @@ class PipelineService:
         exists for the day FL runs on the assistant's own label space, and it
         refuses unless the class counts match.
         """
+        if sweep_runner.status().get("running"):
+            raise ValidationError("Wait for the epsilon sweep to finish before exporting the model.")
         if not coordinator_has_model():
             raise ValidationError(
                 "No aggregated global model yet — run at least one federated round first."
@@ -141,8 +165,15 @@ class PipelineService:
         modules = ["fl.deploy.export_onnx"] + (["fl.deploy.benchmark"] if benchmark else [])
         for mod in modules:
             try:
+                cmd = [sys.executable, "-m", mod]
+                if mod == "fl.deploy.export_onnx":
+                    # The export module fetches the in-process coordinator's
+                    # weights over HTTP. Pass the configured port explicitly;
+                    # otherwise a demo started with PORT=8001 silently calls the
+                    # hard-coded CLI default :8000.
+                    cmd += ["--server-url", _fl_server_url()]
                 proc = subprocess.run(
-                    [sys.executable, "-m", mod], cwd=REPO_ROOT,
+                    cmd, cwd=REPO_ROOT,
                     capture_output=True, text=True, timeout=900,
                 )
                 out["steps"].append({
@@ -194,6 +225,11 @@ class PipelineService:
 def _delta() -> float:
     from app.core.config import settings
     return settings.FL_DP_DELTA
+
+
+def _fl_server_url() -> str:
+    from app.core.config import settings
+    return (settings.FL_SERVER_URL or "http://127.0.0.1:8000").rstrip("/")
 
 
 def coordinator_has_model() -> bool:

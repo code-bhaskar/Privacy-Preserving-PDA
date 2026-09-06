@@ -144,7 +144,7 @@ def onnx_export(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Export the aggregated global model to ``deployed_models/intent_model.onnx``."""
+    """Export the aggregated global model to its separate federated ONNX artifact."""
     return pipeline_controller.export_onnx(db, payload)
 
 

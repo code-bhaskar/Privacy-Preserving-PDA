@@ -249,14 +249,14 @@ interface JwtPart {
   styles: [
     `
       .panel {
-        background: rgba(13, 21, 36, 0.86);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.75rem;
       }
       .panel-head {
-        background: rgba(9, 14, 25, 0.7);
+        background: rgba(248, 250, 252, 0.96);
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.88rem;
         font-weight: 600;
         display: flex;
@@ -273,7 +273,7 @@ interface JwtPart {
         border: 1px solid rgba(148, 163, 184, 0.14);
         border-radius: 0.5rem;
         margin-bottom: 0.4rem;
-        background: rgba(7, 11, 20, 0.55);
+        background: rgba(248, 250, 252, 0.96);
       }
       .consent-body {
         display: flex;
@@ -283,7 +283,7 @@ interface JwtPart {
         cursor: pointer;
       }
       .consent-label {
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.85rem;
         font-weight: 600;
         display: flex;
@@ -293,10 +293,10 @@ interface JwtPart {
       }
       .consent-label code {
         font-size: 0.68rem;
-        color: #7dd3fc;
+        color: #0284c7;
       }
       .consent-hint {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.72rem;
         line-height: 1.45;
       }
@@ -316,16 +316,16 @@ interface JwtPart {
         border-bottom: 0;
       }
       .kv-row .k {
-        color: #7dd3fc;
+        color: #0284c7;
         flex: 0 0 5.5rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .kv-row .v {
-        color: #e2e8f0;
+        color: #1f2937;
         word-break: break-word;
       }
       .crypto {
-        background: #070b14;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 0.5rem;
         padding: 0.6rem 0.75rem;
@@ -341,20 +341,20 @@ interface JwtPart {
       }
       .crypto-row .lbl {
         flex: 0 0 5.5rem;
-        color: #7c8aa0;
+        color: #64748b;
         text-transform: uppercase;
         font-size: 0.64rem;
         letter-spacing: 0.06em;
       }
       .crypto-row .val {
         word-break: break-all;
-        color: #e2e8f0;
+        color: #1f2937;
       }
       .val.plain {
-        color: #fbbf24;
+        color: #b45309;
       }
       .val.ct {
-        color: #a5f3fc;
+        color: #0f766e;
         font-size: 0.72rem;
       }
       .probe {
@@ -362,7 +362,7 @@ interface JwtPart {
         padding: 0.5rem 0.7rem;
         margin-bottom: 0.4rem;
         border: 1px solid rgba(148, 163, 184, 0.16);
-        background: rgba(7, 11, 20, 0.55);
+        background: rgba(248, 250, 252, 0.96);
       }
       .probe.safe {
         border-color: rgba(34, 197, 94, 0.35);
@@ -377,30 +377,30 @@ interface JwtPart {
         align-items: center;
         gap: 0.5rem;
         font-size: 0.78rem;
-        color: #cbd5e1;
+        color: #64748b;
       }
       .probe-head .at {
         color: #64748b;
         font-size: 0.68rem;
       }
       .probe-detail {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.74rem;
         margin-top: 0.2rem;
         word-break: break-word;
       }
       .probe-note {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.72rem;
         margin-top: 0.15rem;
       }
       table.data {
-        color: #cbd5e1;
+        color: #64748b;
         font-size: 0.8rem;
         margin-bottom: 0;
       }
       table.data thead th {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.68rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -410,15 +410,15 @@ interface JwtPart {
         border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       }
       .tech {
-        color: #f1f5f9;
+        color: #111827;
         font-weight: 600;
       }
       .notes {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.76rem;
       }
       .muted {
-        color: #7c8aa0;
+        color: #64748b;
       }
       .micro {
         font-size: 0.74rem;
@@ -428,12 +428,12 @@ interface JwtPart {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
       :host ::ng-deep .input-group-text {
-        background: #0b1220;
+        background: #ffffff;
         border-color: rgba(148, 163, 184, 0.28);
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.74rem;
       }
     `,

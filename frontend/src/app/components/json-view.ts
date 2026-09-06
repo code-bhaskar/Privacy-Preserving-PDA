@@ -25,11 +25,11 @@ import { Component, computed, input, signal } from '@angular/core';
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: #94a3b8;
+        color: #64748b;
         font-weight: 600;
       }
       .json {
-        background: #070b14;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 0.5rem;
         padding: 0.6rem 0.75rem;
@@ -38,7 +38,7 @@ import { Component, computed, input, signal } from '@angular/core';
         overflow: auto;
         font-size: 0.74rem;
         line-height: 1.45;
-        color: #a5f3fc;
+        color: #0f766e;
         white-space: pre-wrap;
         word-break: break-word;
       }

@@ -4,7 +4,7 @@ These drive ``fl/pipeline/supervisor.py`` so the Angular frontend can run the
 whole FL demo (dataset -> clients -> rounds -> epsilon sweep -> ONNX) through the
 same FastAPI app that serves the rest of the product.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DatasetPrepareRequest(BaseModel):
@@ -14,7 +14,10 @@ class DatasetPrepareRequest(BaseModel):
 
 class ClientsSpawnRequest(BaseModel):
     count: int = Field(3, ge=1, le=8)
-    start_id: int = Field(0, ge=0, le=32)
+    # The dataset partitioner creates ids [0, clients - 1]. Keeping this bound
+    # aligned with the supervisor cap avoids starting guaranteed-to-fail client
+    # processes for impossible shard ids.
+    start_id: int = Field(0, ge=0, le=7)
     drop_at: str | None = Field(
         None, pattern="^COLLECT$",
         description="Set to 'COLLECT' on one spawn to demo Shamir dropout recovery.",
@@ -23,6 +26,7 @@ class ClientsSpawnRequest(BaseModel):
 
 
 class ClientsStopRequest(BaseModel):
+    # `null` means all supervised clients; an empty list is a deliberate no-op.
     client_ids: list[int] | None = None
 
 
@@ -30,6 +34,8 @@ class SweepRequest(BaseModel):
     """Accuracy-vs-epsilon sweep, run in-process with live progress."""
     epsilons: list[float | None] = Field(
         default_factory=lambda: [None, 10.0, 5.0, 1.0],
+        min_length=1,
+        max_length=16,
         description="null entry means no differential privacy (ε=∞).",
     )
     rounds: int = Field(3, ge=1, le=50)
@@ -37,6 +43,13 @@ class SweepRequest(BaseModel):
     local_epochs: int = Field(1, ge=1, le=10)
     clip_norm: float = Field(20.0, gt=0.0)
     lr: float = Field(0.5, gt=0.0, le=5.0)
+
+    @field_validator("epsilons")
+    @classmethod
+    def validate_epsilons(cls, values: list[float | None]) -> list[float | None]:
+        if any(e is not None and e <= 0 for e in values):
+            raise ValueError("epsilon values must be positive or null for no DP")
+        return values
 
 
 class OnnxExportRequest(BaseModel):

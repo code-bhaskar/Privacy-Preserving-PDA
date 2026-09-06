@@ -136,9 +136,28 @@ class FederatedClient:
 
         if self.drop_at_phase == "COLLECT":
             print(f"[client {self.id}] *** SIMULATING DROPOUT ***", flush=True)
-            st = self._wait("UNMASK", timeout=900, round_id=rid)
-            rev = sa.reveal(st["survivors"], st["dropped"])
-            # a dropped client contributes nothing; it just stops here
+            # This client intentionally sends no masked update. It does help the
+            # demo close COLLECT once the threshold of survivor updates exists;
+            # otherwise the authenticated product request would have to wait for
+            # the full round timeout before exercising Shamir recovery.
+            close_deadline = time.time() + 900
+            while time.time() < close_deadline:
+                st = self._get("/api/v1/fl/round/status")
+                if st["round_id"] != rid:
+                    raise StaleRound(f"server moved to round {st['round_id']}")
+                if st["phase"] in ("UNMASK", "DONE"):
+                    break
+                if st["phase"] == "COLLECT":
+                    closed = self._post("/api/v1/fl/round/close-collection", {})
+                    if closed.get("closed"):
+                        break
+                time.sleep(1.0)
+            if st["phase"] == "DONE":
+                # The survivors may have completed the aggregate between the
+                # status check above and this client reaching the wait call.
+                return {"dropped": True}
+            self._wait("UNMASK", timeout=900, round_id=rid)
+            # A dropped client contributes nothing and never reveals its secret.
             return {"dropped": True}
 
         # Phase 3: real local training on private data

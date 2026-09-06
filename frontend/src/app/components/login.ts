@@ -26,20 +26,19 @@ export const DEMO_PASSWORD = 'DemoPass123!';
           <div class="brand mb-4">
             <div class="brand-mark"><i class="bi bi-shield-lock-fill"></i></div>
             <div>
-              <h1 class="h4 mb-0">Privacy-Preserving Digital Assistant</h1>
+              <h1 class="h4 mb-0">Your private assistant</h1>
               <p class="subtitle mb-0">
-                Local-first assistant · JWT auth · AES-256-GCM at rest · ONNX on-device intent ·
-                tamper-evident audit · Bonawitz secure aggregation
+                Calendar, reminders, local summaries, and clear privacy controls in one focused workspace.
               </p>
             </div>
           </div>
 
           <div class="d-flex flex-wrap gap-2 mb-4">
-            <app-pill [tone]="health() === 'ok' ? 'ok' : 'bad'" [icon]="health() === 'ok' ? 'plug-fill' : 'plug-fill'">
+            <app-pill [tone]="health() === 'ok' ? 'ok' : 'bad'" icon="plug-fill">
               backend {{ health() === 'ok' ? 'reachable' : 'unreachable' }}
             </app-pill>
-            <app-pill tone="info" icon="database">SQLite / PostgreSQL 18</app-pill>
-            <app-pill tone="accent" icon="cpu">ONNX Runtime</app-pill>
+            <app-pill tone="info" icon="house">local-first processing</app-pill>
+            <app-pill tone="accent" icon="shield-check">privacy by default</app-pill>
           </div>
 
           <ul class="nav nav-pills mb-3" role="tablist">
@@ -176,12 +175,12 @@ export const DEMO_PASSWORD = 'DemoPass123!';
         background:
           radial-gradient(1200px 600px at 15% -10%, rgba(79, 140, 255, 0.22), transparent 60%),
           radial-gradient(900px 500px at 110% 10%, rgba(139, 92, 246, 0.18), transparent 55%),
-          #070b14;
+          #f8fafc;
       }
       .login-card {
         width: 100%;
         max-width: 44rem;
-        background: rgba(13, 20, 34, 0.92);
+        background: rgba(255, 255, 255, 0.98);
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 1rem;
         backdrop-filter: blur(6px);
@@ -199,46 +198,46 @@ export const DEMO_PASSWORD = 'DemoPass123!';
         display: grid;
         place-items: center;
         font-size: 1.5rem;
-        color: #bfdbfe;
+        color: #1d4ed8;
         background: linear-gradient(145deg, rgba(79, 140, 255, 0.35), rgba(139, 92, 246, 0.3));
         border: 1px solid rgba(147, 197, 253, 0.35);
       }
       .subtitle {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.82rem;
         line-height: 1.5;
         margin-top: 0.25rem;
       }
       .hint {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.8rem;
         line-height: 1.55;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
       :host ::ng-deep .form-control {
-        background: #0b1220;
+        background: #ffffff;
         border-color: rgba(148, 163, 184, 0.28);
-        color: #e2e8f0;
+        color: #1f2937;
       }
       :host ::ng-deep .form-control:focus {
-        background: #0b1220;
+        background: #ffffff;
         border-color: #4f8cff;
         box-shadow: 0 0 0 0.2rem rgba(79, 140, 255, 0.18);
-        color: #f8fafc;
+        color: #1f2937;
       }
       :host ::ng-deep .form-label {
-        color: #cbd5e1;
+        color: #64748b;
         font-size: 0.82rem;
         font-weight: 600;
       }
       :host ::ng-deep .form-text {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.72rem;
       }
       :host ::ng-deep .nav-pills .nav-link {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.85rem;
       }
       :host ::ng-deep .nav-pills .nav-link.active {

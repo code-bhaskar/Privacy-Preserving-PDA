@@ -227,38 +227,39 @@ import { Pill } from './pill';
           </div>
         </div>
 
-        <div class="card panel mt-3">
-          <div class="card-header panel-head">
-            <span><i class="bi bi-info-circle me-2"></i>What the server actually stores</span>
-          </div>
-          <div class="card-body">
+        <details class="details-card mt-3">
+          <summary>
+            <span><i class="bi bi-shield-lock me-2"></i>How calendar data is protected</span>
+            <span class="details-hint">show details</span>
+          </summary>
+          <div class="details-body">
             <p class="muted micro mb-2">
-              Every row you just created is written as AES-256-GCM ciphertext with your user id as
-              Authenticated Additional Data, and audit reasons never contain the plaintext.
+              Calendar and reminder text is written as AES-256-GCM ciphertext with your user id as
+              Authenticated Additional Data. Audit reasons never contain the plaintext.
             </p>
             <pre class="sql"><code>SELECT id, title FROM calendar_events LIMIT 2;
 -- 1 | xBrZpLWjU/RrHUF2ek6CZB8tnFkNUeZJ5KIO1I7g6kXznHc=
---   ↑ AES-256-GCM ciphertext, not "Budget review with finance"</code></pre>
+--   ↑ ciphertext, not "Budget review with finance"</code></pre>
             <p class="muted micro mb-0 mt-2">
-              Run that against the live database during the demo — or check the
-              <em>Audit trail</em> tab, where the reason column stays plaintext-free.
+              The <em>Audit trail</em> tab keeps this implementation evidence separate from your
+              everyday calendar and reminders.
             </p>
           </div>
-        </div>
+        </details>
       </div>
     </div>
   `,
   styles: [
     `
       .panel {
-        background: rgba(13, 21, 36, 0.86);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.75rem;
       }
       .panel-head {
-        background: rgba(9, 14, 25, 0.7);
+        background: rgba(248, 250, 252, 0.96);
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.88rem;
         font-weight: 600;
         display: flex;
@@ -267,12 +268,12 @@ import { Pill } from './pill';
         gap: 0.5rem;
       }
       table.data {
-        color: #cbd5e1;
+        color: #64748b;
         font-size: 0.8rem;
         margin-bottom: 0;
       }
       table.data thead th {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.68rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -287,7 +288,7 @@ import { Pill } from './pill';
         background: rgba(79, 140, 255, 0.08);
       }
       .title {
-        color: #f1f5f9;
+        color: #111827;
         font-weight: 500;
       }
       .mono {
@@ -309,7 +310,7 @@ import { Pill } from './pill';
         justify-content: space-between;
         gap: 0.6rem;
         align-items: center;
-        background: rgba(7, 11, 20, 0.7);
+        background: rgba(248, 250, 252, 0.98);
         border: 1px solid rgba(148, 163, 184, 0.14);
         border-radius: 0.5rem;
         padding: 0.45rem 0.6rem;
@@ -325,12 +326,12 @@ import { Pill } from './pill';
         min-width: 0;
       }
       .r-text {
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.84rem;
         word-break: break-word;
       }
       .r-meta {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.7rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         display: flex;
@@ -342,25 +343,65 @@ import { Pill } from './pill';
         gap: 0.25rem;
         flex: 0 0 auto;
       }
+      .details-card {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 0.75rem;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+      }
+      .details-card summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        list-style: none;
+        padding: 0.75rem 0.9rem;
+        color: #1f2937;
+        font-size: 0.82rem;
+        font-weight: 650;
+      }
+      .details-card summary::-webkit-details-marker {
+        display: none;
+      }
+      .details-card summary::after {
+        content: '+';
+        color: #2563eb;
+        font-size: 1.05rem;
+        font-weight: 400;
+      }
+      .details-card[open] summary::after {
+        content: '−';
+      }
+      .details-hint {
+        margin-left: auto;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 500;
+      }
+      .details-body {
+        border-top: 1px solid rgba(148, 163, 184, 0.16);
+        padding: 0.8rem 0.9rem;
+      }
       .sql {
-        background: #070b14;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 0.5rem;
         padding: 0.55rem 0.7rem;
         margin: 0;
-        color: #a5f3fc;
+        color: #0f766e;
         font-size: 0.72rem;
         overflow: auto;
       }
       .muted {
-        color: #7c8aa0;
+        color: #64748b;
       }
       .micro {
         font-size: 0.74rem;
         line-height: 1.5;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
     `,
   ],
