@@ -27,32 +27,32 @@ import { Component, input } from '@angular/core';
         white-space: nowrap;
       }
       .ok {
-        color: #4ade80;
+        color: #16a34a;
         background: rgba(34, 197, 94, 0.12);
         border-color: rgba(34, 197, 94, 0.35);
       }
       .info {
-        color: #7dd3fc;
+        color: #0284c7;
         background: rgba(56, 189, 248, 0.12);
         border-color: rgba(56, 189, 248, 0.35);
       }
       .warn {
-        color: #fbbf24;
+        color: #b45309;
         background: rgba(245, 158, 11, 0.12);
         border-color: rgba(245, 158, 11, 0.35);
       }
       .bad {
-        color: #f87171;
+        color: #dc2626;
         background: rgba(239, 68, 68, 0.12);
         border-color: rgba(239, 68, 68, 0.35);
       }
       .muted {
-        color: #94a3b8;
+        color: #64748b;
         background: rgba(148, 163, 184, 0.1);
         border-color: rgba(148, 163, 184, 0.28);
       }
       .accent {
-        color: #c4b5fd;
+        color: #7c3aed;
         background: rgba(139, 92, 246, 0.14);
         border-color: rgba(139, 92, 246, 0.35);
       }

@@ -1,44 +1,46 @@
-/* PPDA demonstration frontend — Bootstrap 5.3.3 dark theme + small house style.
-   Bootstrap is customised through SCSS variables BEFORE the import so the whole
-   kit (buttons, tables, forms, alerts) comes out in the demo's dark palette. */
+/* PPDA demonstration frontend — calm, light theme.
+   The product surface is intentionally white and quiet so the useful parts —
+   calendar, reminders, summaries and the separate FL workbench — are easy to
+   scan. Bootstrap is customised before import so every control follows the same
+   visual language. */
 
-$primary: #4f8cff;
-$success: #22c55e;
-$danger: #ef4444;
-$warning: #f59e0b;
-$info: #38bdf8;
+$primary: #2563eb;
+$success: #16a34a;
+$danger: #dc2626;
+$warning: #b45309;
+$info: #0284c7;
 $secondary: #64748b;
 
-$body-bg: #070b14;
-$body-color: #e2e8f0;
+$body-bg: #f5f7fb;
+$body-color: #1f2937;
 
-$card-bg: rgba(13, 21, 36, 0.86);
-$card-border-color: rgba(148, 163, 184, 0.16);
-$card-cap-bg: rgba(9, 14, 25, 0.7);
-$card-cap-color: #e2e8f0;
+$card-bg: #ffffff;
+$card-border-color: #e5e7eb;
+$card-cap-bg: #f8fafc;
+$card-cap-color: #1f2937;
 
-$input-bg: #0b1220;
-$input-color: #e2e8f0;
-$input-border-color: rgba(148, 163, 184, 0.28);
-$input-placeholder-color: #64748b;
-$input-focus-border-color: #4f8cff;
-$input-focus-box-shadow: 0 0 0 0.2rem rgba(79, 140, 255, 0.18);
-$input-group-addon-bg: #0b1220;
-$input-group-addon-color: #94a3b8;
-$input-group-addon-border-color: rgba(148, 163, 184, 0.28);
+$input-bg: #ffffff;
+$input-color: #1f2937;
+$input-border-color: #d1d5db;
+$input-placeholder-color: #94a3b8;
+$input-focus-border-color: #2563eb;
+$input-focus-box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14);
+$input-group-addon-bg: #f8fafc;
+$input-group-addon-color: #64748b;
+$input-group-addon-border-color: #d1d5db;
 
-$form-check-input-bg: #0b1220;
-$form-check-input-border: 1px solid rgba(148, 163, 184, 0.4);
-$form-check-input-checked-bg-color: #22c55e;
-$form-check-input-checked-border-color: #22c55e;
+$form-check-input-bg: #ffffff;
+$form-check-input-border: 1px solid #cbd5e1;
+$form-check-input-checked-bg-color: #2563eb;
+$form-check-input-checked-border-color: #2563eb;
 
-$table-color: #cbd5e1;
-$table-border-color: rgba(148, 163, 184, 0.1);
-$table-striped-bg: rgba(148, 163, 184, 0.04);
-$table-hover-bg: rgba(79, 140, 255, 0.07);
+$table-color: #334155;
+$table-border-color: #e5e7eb;
+$table-striped-bg: #f8fafc;
+$table-hover-bg: #eff6ff;
 
-$border-color: rgba(148, 163, 184, 0.16);
-$hr-color: rgba(148, 163, 184, 0.18);
+$border-color: #e5e7eb;
+$hr-color: #e5e7eb;
 $hr-opacity: 1;
 
 $font-family-base:
@@ -51,12 +53,31 @@ $font-family-base:
   sans-serif;
 $font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-$border-radius: 0.5rem;
-$border-radius-lg: 0.75rem;
-$border-radius-sm: 0.35rem;
+$border-radius: 0.55rem;
+$border-radius-lg: 0.8rem;
+$border-radius-sm: 0.4rem;
 
 @import 'bootstrap/scss/bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+
+:root {
+  color-scheme: light;
+  --ppda-page: #f5f7fb;
+  --ppda-surface: #ffffff;
+  --ppda-surface-soft: #f8fafc;
+  --ppda-surface-blue: #eff6ff;
+  --ppda-border: #e5e7eb;
+  --ppda-border-strong: #cbd5e1;
+  --ppda-text: #1f2937;
+  --ppda-text-soft: #475569;
+  --ppda-muted: #64748b;
+  --ppda-primary: #2563eb;
+  --ppda-primary-soft: #dbeafe;
+  --ppda-success: #15803d;
+  --ppda-warning: #92400e;
+  --ppda-danger: #b91c1c;
+  --ppda-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
 
 html,
 body {
@@ -64,48 +85,52 @@ body {
 }
 
 body {
-  background: $body-bg;
-  color: $body-color;
+  background: var(--ppda-page);
+  color: var(--ppda-text);
   font-size: 0.9rem;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbars: the demo has a lot of tables and log panes. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
-}
-*::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-*::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 999px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
+button,
+a,
+input,
+textarea,
+select {
+  &:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.22);
+    outline-offset: 2px;
+  }
 }
 
-/* Bootstrap outline buttons read poorly on near-black; lift them a little. */
+/* A small amount of shared polish keeps the individual pages consistent. */
+.card {
+  box-shadow: var(--ppda-shadow);
+}
+
+.btn {
+  font-weight: 600;
+}
+
 .btn-outline-light {
-  --bs-btn-color: #cbd5e1;
-  --bs-btn-border-color: rgba(148, 163, 184, 0.35);
-  --bs-btn-hover-bg: rgba(203, 213, 225, 0.12);
-  --bs-btn-hover-border-color: rgba(203, 213, 225, 0.5);
-  --bs-btn-hover-color: #fff;
+  --bs-btn-color: #475569;
+  --bs-btn-border-color: #cbd5e1;
+  --bs-btn-hover-bg: #f1f5f9;
+  --bs-btn-hover-border-color: #94a3b8;
+  --bs-btn-hover-color: #1f2937;
 }
 
 .btn-outline-secondary {
-  --bs-btn-color: #94a3b8;
-  --bs-btn-border-color: rgba(148, 163, 184, 0.3);
-  --bs-btn-hover-bg: rgba(148, 163, 184, 0.14);
-  --bs-btn-hover-color: #e2e8f0;
+  --bs-btn-color: #475569;
+  --bs-btn-border-color: #cbd5e1;
+  --bs-btn-hover-bg: #f1f5f9;
+  --bs-btn-hover-border-color: #94a3b8;
+  --bs-btn-hover-color: #1f2937;
 }
 
 .form-control,
 .form-select {
   font-size: 0.84rem;
+  color: var(--ppda-text);
 }
 
 .form-control-sm,
@@ -113,19 +138,54 @@ body {
   font-size: 0.78rem;
 }
 
+.form-control::placeholder,
+.form-select::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
 code {
   font-family: $font-family-monospace;
   font-size: 0.85em;
+  color: #7c3aed;
 }
 
 .alert {
-  border-radius: 0.5rem;
+  border-radius: 0.55rem;
 }
 
-/* Utility used across panels. */
-.text-danger {
-  color: #f87171 !important;
+hr {
+  opacity: 1;
 }
+
+/* Scrollbars: tables and logs remain compact without looking like a terminal. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.text-danger {
+  color: #b91c1c !important;
+}
+
 .text-warning {
-  color: #fbbf24 !important;
+  color: #92400e !important;
+}
+
+.text-muted {
+  color: var(--ppda-muted) !important;
 }

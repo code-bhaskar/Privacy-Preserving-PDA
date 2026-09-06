@@ -97,7 +97,7 @@ const PALETTE = ['#4f8cff', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6
         stroke-width: 1;
       }
       .axis {
-        fill: #94a3b8;
+        fill: #64748b;
         font-size: 10px;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
@@ -112,7 +112,7 @@ const PALETTE = ['#4f8cff', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6
         gap: 0.75rem;
         margin-top: 0.35rem;
         font-size: 0.75rem;
-        color: #cbd5e1;
+        color: #64748b;
       }
       .legend-item {
         display: inline-flex;

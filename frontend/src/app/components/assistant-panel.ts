@@ -58,19 +58,22 @@ import { JsonView } from './json-view';
               </button>
             </form>
 
-            <div class="chips mb-3">
-              @for (sample of samples; track sample.intent) {
-                <button
-                  type="button"
-                  class="chip"
-                  (click)="useSample(sample.text)"
-                  [title]="'Expected intent: ' + sample.intent"
-                >
-                  {{ sample.text }}
-                  <em>{{ sample.intent }}</em>
-                </button>
-              }
-            </div>
+            <details class="sample-prompts mb-3">
+              <summary><i class="bi bi-stars me-1"></i>Try a sample command</summary>
+              <div class="chips mt-2">
+                @for (sample of samples; track sample.intent) {
+                  <button
+                    type="button"
+                    class="chip"
+                    (click)="useSample(sample.text)"
+                    [title]="'Expected intent: ' + sample.intent"
+                  >
+                    {{ sample.text }}
+                    <em>{{ sample.intent }}</em>
+                  </button>
+                }
+              </div>
+            </details>
 
             <div class="feed">
               @for (line of svc.lines(); track line.id) {
@@ -173,29 +176,36 @@ import { JsonView } from './json-view';
           </div>
         </div>
 
-        <div class="card panel mt-3">
+        <div class="card panel mt-3 summary-panel">
           <div class="card-header panel-head">
-            <span><i class="bi bi-text-paragraph me-2"></i>Local summarization</span>
-            <app-pill tone="ok" icon="wifi-off">never leaves the process</app-pill>
+            <span><i class="bi bi-text-paragraph me-2"></i>Summarize entered text</span>
+            <app-pill tone="ok" icon="wifi-off">local only</app-pill>
           </div>
           <div class="card-body">
             <p class="muted micro mb-2">
-              {{ messages().length }} sample messages, encrypted at rest with AES-256-GCM when
-              persisted. Extractive summary is built locally — no cloud LLM call.
+              Paste a message, notes, or a conversation below. The extractive summary is built locally;
+              it is only persisted when you choose <strong>save securely</strong>.
             </p>
-            <ol class="msgs mb-3">
-              @for (m of messages(); track m.sender + m.content) {
-                <li><strong>{{ m.sender }}:</strong> {{ m.content }}</li>
-              }
-            </ol>
-            <div class="d-flex gap-2 align-items-center mb-2">
-              <label class="form-label mb-0 small" for="maxSentences">max sentences</label>
+            <label class="form-label small fw-semibold mb-1" for="summaryText">Text to summarize</label>
+            <textarea
+              id="summaryText"
+              name="summaryText"
+              class="form-control summary-input"
+              rows="6"
+              [(ngModel)]="summaryText"
+              placeholder="Paste the text you want to summarize…"
+            ></textarea>
+            <div class="summary-actions mt-2">
+              <button class="btn btn-sm btn-link px-0" type="button" (click)="useSampleMessages()">
+                <i class="bi bi-stars me-1"></i>Use sample text
+              </button>
+              <label class="form-label mb-0 small" for="maxSentences">sentences</label>
               <input
                 id="maxSentences"
                 type="number"
                 min="1"
                 max="6"
-                class="form-control form-control-sm w-auto"
+                class="form-control form-control-sm sentence-count"
                 [(ngModel)]="maxSentences"
               />
               <div class="form-check form-switch mb-0">
@@ -206,14 +216,22 @@ import { JsonView } from './json-view';
                   id="persist"
                   [(ngModel)]="persist"
                 />
-                <label class="form-check-label small" for="persist">persist (encrypt at rest)</label>
+                <label class="form-check-label small" for="persist">save securely</label>
               </div>
-              <button class="btn btn-sm btn-outline-primary ms-auto" (click)="summarize()" [disabled]="svc.busy()">
-                <i class="bi bi-magic me-1"></i>Summarize
+              <button class="btn btn-sm btn-primary ms-auto" type="button" (click)="summarize()" [disabled]="svc.busy() || !summaryText.trim()">
+                <i class="bi bi-magic me-1"></i>Summarize text
               </button>
             </div>
+            <details class="input-preview mt-3">
+              <summary>Preview {{ messages().length }} message{{ messages().length === 1 ? '' : 's' }} sent to the local summarizer</summary>
+              <ol class="msgs mb-0 mt-2">
+                @for (m of messages(); track m.sender + m.content) {
+                  <li><strong>{{ m.sender }}:</strong> {{ m.content }}</li>
+                }
+              </ol>
+            </details>
             @if (svc.lastSummary(); as s) {
-              <div class="summary">
+              <div class="summary mt-3">
                 <div class="summary-head">
                   <app-pill tone="info" icon="text-left">{{ s.n_messages }} messages</app-pill>
                   <app-pill [tone]="s.raw_content_transmitted_externally ? 'bad' : 'ok'" icon="shield-check">
@@ -231,20 +249,45 @@ import { JsonView } from './json-view';
   styles: [
     `
       .panel {
-        background: rgba(13, 21, 36, 0.86);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.75rem;
       }
       .panel-head {
-        background: rgba(9, 14, 25, 0.7);
+        background: rgba(248, 250, 252, 0.96);
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.88rem;
         font-weight: 600;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
+      }
+      .sample-prompts {
+        border-top: 1px solid rgba(148, 163, 184, 0.18);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        padding: 0.55rem 0;
+      }
+      .sample-prompts summary {
+        cursor: pointer;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 600;
+        list-style: none;
+      }
+      .sample-prompts summary::-webkit-details-marker {
+        display: none;
+      }
+      .sample-prompts summary::after {
+        content: '+';
+        color: #2563eb;
+        float: right;
+        font-size: 1rem;
+        font-weight: 400;
+      }
+      .sample-prompts[open] summary::after {
+        content: '−';
       }
       .chips {
         display: flex;
@@ -254,7 +297,7 @@ import { JsonView } from './json-view';
       .chip {
         background: rgba(79, 140, 255, 0.08);
         border: 1px solid rgba(79, 140, 255, 0.25);
-        color: #cbd5e1;
+        color: #64748b;
         border-radius: 999px;
         padding: 0.25rem 0.65rem;
         font-size: 0.74rem;
@@ -264,17 +307,17 @@ import { JsonView } from './json-view';
         transition: background 0.15s ease;
       }
       .chip:hover {
-        background: rgba(79, 140, 255, 0.18);
-        color: #fff;
+        background: rgba(79, 140, 255, 0.14);
+        color: #1d4ed8;
       }
       .chip em {
         font-style: normal;
         font-size: 0.62rem;
-        color: #7dd3fc;
+        color: #0284c7;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .feed {
-        background: #070b14;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.5rem;
         padding: 0.6rem 0.75rem;
@@ -287,17 +330,17 @@ import { JsonView } from './json-view';
         display: flex;
         gap: 0.6rem;
         padding: 0.15rem 0;
-        color: #94a3b8;
+        color: #64748b;
       }
       .line .at {
-        color: #475569;
+        color: #64748b;
         flex: 0 0 auto;
       }
       .line.user {
-        color: #bfdbfe;
+        color: #1d4ed8;
       }
       .line.err {
-        color: #fca5a5;
+        color: #dc2626;
       }
       .intent-row {
         display: flex;
@@ -309,17 +352,17 @@ import { JsonView } from './json-view';
       .intent {
         font-size: 1.35rem;
         font-weight: 700;
-        color: #93c5fd;
+        color: #2563eb;
         letter-spacing: 0.01em;
       }
       .action {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.76rem;
       }
       .conf {
         font-size: 1.6rem;
         font-weight: 700;
-        color: #4ade80;
+        color: #16a34a;
         line-height: 1;
       }
       .conf-label {
@@ -339,7 +382,7 @@ import { JsonView } from './json-view';
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #94a3b8;
+        color: #64748b;
         margin-bottom: 0.4rem;
       }
       .method {
@@ -365,11 +408,11 @@ import { JsonView } from './json-view';
         border-bottom: 0;
       }
       .kv-row .k {
-        color: #7dd3fc;
+        color: #0284c7;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .kv-row .v {
-        color: #e2e8f0;
+        color: #1f2937;
         text-align: right;
         word-break: break-word;
       }
@@ -387,7 +430,7 @@ import { JsonView } from './json-view';
       }
       .tok {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        color: #cbd5e1;
+        color: #64748b;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -410,12 +453,12 @@ import { JsonView } from './json-view';
       .num {
         text-align: right;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.7rem;
       }
       .msgs {
         font-size: 0.8rem;
-        color: #cbd5e1;
+        color: #64748b;
         padding-left: 1.2rem;
         line-height: 1.6;
       }
@@ -424,7 +467,7 @@ import { JsonView } from './json-view';
         border: 1px solid rgba(34, 197, 94, 0.25);
         border-radius: 0.5rem;
         padding: 0.6rem 0.75rem;
-        color: #dcfce7;
+        color: #166534;
         font-size: 0.84rem;
       }
       .summary-head {
@@ -433,15 +476,43 @@ import { JsonView } from './json-view';
         flex-wrap: wrap;
         margin-bottom: 0.4rem;
       }
+      .summary-input {
+        min-height: 9rem;
+        resize: vertical;
+        line-height: 1.55;
+      }
+      .summary-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+      .sentence-count {
+        width: 4.25rem;
+      }
+      .input-preview {
+        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        padding-top: 0.65rem;
+        color: #475569;
+        font-size: 0.78rem;
+      }
+      .input-preview summary {
+        cursor: pointer;
+        color: #64748b;
+        font-weight: 600;
+      }
+      .input-preview summary:hover {
+        color: #2563eb;
+      }
       .muted {
-        color: #7c8aa0;
+        color: #64748b;
       }
       .micro {
         font-size: 0.72rem;
         line-height: 1.5;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
     `,
   ],
@@ -455,6 +526,7 @@ export class AssistantPanel {
   command = '';
   maxSentences = 3;
   persist = true;
+  summaryText = SAMPLE_MESSAGES.map((m) => `${m.sender}: ${m.content}`).join('\n\n');
 
   readonly messages = signal(SAMPLE_MESSAGES);
 
@@ -494,10 +566,29 @@ export class AssistantPanel {
     return Math.max(2, (Math.abs(contribution) / max) * 100);
   }
 
+  useSampleMessages(): void {
+    this.summaryText = SAMPLE_MESSAGES.map((m) => `${m.sender}: ${m.content}`).join('\n\n');
+    this.messages.set(SAMPLE_MESSAGES);
+  }
+
+  private enteredMessages(): { sender: string; content: string }[] {
+    return this.summaryText
+      .trim()
+      .split(/\n\s*\n/)
+      .map((block) => block.trim())
+      .filter(Boolean)
+      .map((block) => {
+        const match = block.match(/^([^:\n]{1,40}):\s*([\s\S]+)$/);
+        return match
+          ? { sender: match[1].trim(), content: match[2].trim() }
+          : { sender: 'You', content: block.replace(/\s+/g, ' ').trim() };
+      });
+  }
+
   async summarize(): Promise<void> {
-    const res = await this.svc.summarize(this.messages(), this.maxSentences, this.persist);
-    if (res) {
-      this.messages.set(SAMPLE_MESSAGES);
-    }
+    const entered = this.enteredMessages();
+    if (!entered.length) return;
+    this.messages.set(entered);
+    await this.svc.summarize(entered, this.maxSentences, this.persist);
   }
 }

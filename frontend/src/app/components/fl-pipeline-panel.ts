@@ -135,6 +135,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
             }
           </div>
           <div class="card-body">
+            <div class="workflow-heading"><span>Setup</span><small>prepare data and connect client processes</small></div>
             <!-- step 1: dataset -->
             <div class="step-block">
               <div class="step-title">
@@ -250,6 +251,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
               }
             </div>
 
+            <div class="workflow-heading train-heading"><span>Train and measure</span><small>run secure rounds, compare privacy, then export</small></div>
             <!-- step 3: round -->
             <div class="step-block">
               <div class="step-title">
@@ -581,10 +583,11 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
             </div>
           </div>
           <div class="col-12 col-lg-6">
-            <div class="card panel">
-              <div class="card-header panel-head">
+            <details class="details-card panel">
+              <summary class="panel-head">
                 <span><i class="bi bi-braces me-2"></i>Latest round payload</span>
-              </div>
+                <span class="details-hint">show JSON</span>
+              </summary>
               <div class="card-body">
                 @if (svc.roundResults()[0]; as r) {
                   <app-json-view [data]="r" label="POST /api/v1/federated/round → 200" [maxRows]="18" />
@@ -595,15 +598,16 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
                   </p>
                 }
               </div>
-            </div>
+            </details>
           </div>
         </div>
 
-        <div class="card panel mt-3">
-          <div class="card-header panel-head">
-            <span><i class="bi bi-megaphone me-2"></i>What to say about this (honest limits)</span>
-          </div>
-          <div class="card-body">
+        <details class="details-card panel mt-3">
+          <summary class="panel-head">
+            <span><i class="bi bi-megaphone me-2"></i>Technical notes and honest limits</span>
+            <span class="details-hint">show details</span>
+          </summary>
+          <div class="details-body">
             <ul class="limits mb-0">
               <li>
                 <strong>One pipeline, still isolated clients.</strong> The coordinator lives in the same
@@ -629,21 +633,21 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
               </li>
             </ul>
           </div>
-        </div>
+        </details>
       </div>
     </div>
   `,
   styles: [
     `
       .panel {
-        background: rgba(13, 21, 36, 0.86);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.75rem;
       }
       .panel-head {
-        background: rgba(9, 14, 25, 0.7);
+        background: rgba(248, 250, 252, 0.96);
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.88rem;
         font-weight: 600;
         display: flex;
@@ -654,7 +658,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       }
       .busy {
         font-size: 0.74rem;
-        color: #7dd3fc;
+        color: #0284c7;
         display: inline-flex;
         align-items: center;
       }
@@ -672,7 +676,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         border-radius: 0.6rem;
         padding: 0.45rem 0.7rem;
         border: 1px solid rgba(148, 163, 184, 0.18);
-        background: rgba(7, 11, 20, 0.6);
+        background: rgba(248, 250, 252, 0.96);
         min-width: 12rem;
         flex: 1 1 auto;
       }
@@ -689,12 +693,12 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         font-size: 0.72rem;
         font-weight: 700;
         background: rgba(148, 163, 184, 0.18);
-        color: #cbd5e1;
+        color: #64748b;
         flex: 0 0 auto;
       }
       .flow-step.ready .flow-num {
         background: rgba(34, 197, 94, 0.25);
-        color: #86efac;
+        color: #15803d;
       }
       .flow-body {
         min-width: 0;
@@ -703,18 +707,18 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       .flow-title {
         font-size: 0.8rem;
         font-weight: 600;
-        color: #e2e8f0;
+        color: #1f2937;
       }
       .flow-sub {
         font-size: 0.68rem;
-        color: #7c8aa0;
+        color: #64748b;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .flow-arrow {
         align-self: center;
-        color: #475569;
+        color: #64748b;
         flex: 0 0 auto;
       }
       .phases {
@@ -723,7 +727,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       }
       .phases-label {
         font-size: 0.76rem;
-        color: #94a3b8;
+        color: #64748b;
         margin-bottom: 0.5rem;
         font-weight: 600;
       }
@@ -741,11 +745,11 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         font-size: 0.72rem;
         border: 1px solid rgba(148, 163, 184, 0.16);
         color: #64748b;
-        background: rgba(7, 11, 20, 0.5);
+        background: rgba(248, 250, 252, 0.92);
         transition: all 0.2s ease;
       }
       .phase.past {
-        color: #94a3b8;
+        color: #64748b;
         border-color: rgba(148, 163, 184, 0.25);
       }
       .phase.active {
@@ -757,18 +761,41 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       .phase-detail {
         margin-top: 0.6rem;
         font-size: 0.75rem;
-        color: #cbd5e1;
+        color: #64748b;
         display: flex;
         gap: 0.35rem;
         flex-wrap: wrap;
         align-items: center;
+      }
+      .workflow-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 0.15rem 0 0.55rem;
+        padding: 0 0.15rem;
+        color: #6d28d9;
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .workflow-heading small {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .train-heading {
+        margin-top: 1rem;
       }
       .step-block {
         border: 1px solid rgba(148, 163, 184, 0.14);
         border-radius: 0.6rem;
         padding: 0.7rem 0.8rem;
         margin-bottom: 0.7rem;
-        background: rgba(7, 11, 20, 0.45);
+        background: rgba(248, 250, 252, 0.92);
       }
       .step-title {
         display: flex;
@@ -776,7 +803,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         gap: 0.5rem;
         font-size: 0.84rem;
         font-weight: 600;
-        color: #e2e8f0;
+        color: #1f2937;
         margin-bottom: 0.45rem;
         flex-wrap: wrap;
       }
@@ -788,7 +815,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         place-items: center;
         font-size: 0.7rem;
         background: rgba(79, 140, 255, 0.22);
-        color: #bfdbfe;
+        color: #1d4ed8;
         flex: 0 0 auto;
       }
       .shard-bars {
@@ -799,14 +826,14 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       .shard {
         font-size: 0.68rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        color: #94a3b8;
+        color: #64748b;
         background: rgba(79, 140, 255, 0.1);
         border: 1px solid rgba(79, 140, 255, 0.22);
         border-radius: 0.35rem;
         padding: 0.1rem 0.4rem;
       }
       .shard b {
-        color: #bfdbfe;
+        color: #1d4ed8;
       }
       .client-list {
         display: flex;
@@ -818,24 +845,24 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         align-items: center;
         gap: 0.45rem;
         font-size: 0.74rem;
-        background: rgba(7, 11, 20, 0.7);
+        background: rgba(248, 250, 252, 0.98);
         border: 1px solid rgba(148, 163, 184, 0.14);
         border-radius: 0.45rem;
         padding: 0.3rem 0.5rem;
         flex-wrap: wrap;
       }
       .client .cid {
-        color: #e2e8f0;
+        color: #1f2937;
         font-weight: 600;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .client-log {
-        background: #05080f;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.45rem;
         padding: 0.5rem 0.6rem;
         margin: 0;
-        color: #a5f3fc;
+        color: #0f766e;
         font-size: 0.68rem;
         line-height: 1.45;
         max-height: 13rem;
@@ -846,7 +873,7 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
       .chip {
         background: rgba(79, 140, 255, 0.08);
         border: 1px solid rgba(79, 140, 255, 0.25);
-        color: #cbd5e1;
+        color: #64748b;
         border-radius: 999px;
         padding: 0.2rem 0.6rem;
         font-size: 0.72rem;
@@ -883,12 +910,12 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         to { background-position: 1rem 0; }
       }
       table.data {
-        color: #cbd5e1;
+        color: #64748b;
         font-size: 0.78rem;
         margin-bottom: 0;
       }
       table.data thead th {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.66rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -898,14 +925,14 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       }
       .eps {
-        color: #93c5fd;
+        color: #2563eb;
         font-weight: 600;
       }
       .good {
-        color: #4ade80;
+        color: #16a34a;
       }
       .poor {
-        color: #f87171;
+        color: #dc2626;
       }
       .history-table {
         max-height: 20rem;
@@ -928,14 +955,45 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         border-bottom: 0;
       }
       .kv-row .k {
-        color: #7dd3fc;
+        color: #0284c7;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .kv-row .v {
-        color: #e2e8f0;
+        color: #1f2937;
+      }
+      .details-card {
+        overflow: hidden;
+      }
+      .details-card > summary {
+        list-style: none;
+        cursor: pointer;
+      }
+      .details-card > summary::-webkit-details-marker {
+        display: none;
+      }
+      .details-card > summary::after {
+        content: '+';
+        color: #7c3aed;
+        font-size: 1.05rem;
+        font-weight: 400;
+        margin-left: auto;
+      }
+      .details-card[open] > summary::after {
+        content: '−';
+      }
+      .details-hint {
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 500;
+        margin-left: auto;
+        margin-right: 0.4rem;
+      }
+      .details-body {
+        border-top: 1px solid rgba(148, 163, 184, 0.16);
+        padding: 0.8rem 0.9rem;
       }
       .limits {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.78rem;
         line-height: 1.6;
         padding-left: 1.1rem;
@@ -945,10 +1003,10 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         margin-bottom: 0.4rem;
       }
       .limits strong {
-        color: #e2e8f0;
+        color: #1f2937;
       }
       .dim {
-        color: #7c8aa0;
+        color: #64748b;
       }
       .micro {
         font-size: 0.72rem;
@@ -959,21 +1017,21 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         border-left: 3px solid rgba(251, 191, 36, 0.6);
         border-radius: 0.5rem;
         padding: 0.5rem 0.65rem;
-        background: rgba(40, 32, 14, 0.55);
-        color: #d6c08a;
+        background: rgba(255, 247, 237, 0.96);
+        color: #92400e;
       }
       .export-result {
         border: 1px solid rgba(74, 222, 128, 0.22);
         border-left: 3px solid rgba(74, 222, 128, 0.55);
         border-radius: 0.5rem;
         padding: 0.6rem 0.75rem;
-        background: rgba(20, 33, 28, 0.5);
+        background: rgba(240, 253, 244, 0.96);
       }
       .mini-card {
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 0.5rem;
         padding: 0.5rem 0.65rem;
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(248, 250, 252, 0.96);
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
@@ -983,10 +1041,10 @@ const EPS_PRESETS: { label: string; values: (number | null)[] }[] = [
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .muted {
-        color: #7c8aa0;
+        color: #64748b;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
     `,
   ],

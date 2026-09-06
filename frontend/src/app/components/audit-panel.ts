@@ -173,14 +173,14 @@ DELETE FROM audit_logs WHERE id=1;
   styles: [
     `
       .panel {
-        background: rgba(13, 21, 36, 0.86);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 0.75rem;
       }
       .panel-head {
-        background: rgba(9, 14, 25, 0.7);
+        background: rgba(248, 250, 252, 0.96);
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-        color: #e2e8f0;
+        color: #1f2937;
         font-size: 0.88rem;
         font-weight: 600;
         display: flex;
@@ -203,12 +203,12 @@ DELETE FROM audit_logs WHERE id=1;
       .verdict.ok {
         background: rgba(34, 197, 94, 0.1);
         border-color: rgba(34, 197, 94, 0.35);
-        color: #4ade80;
+        color: #16a34a;
       }
       .verdict.bad {
         background: rgba(239, 68, 68, 0.1);
         border-color: rgba(239, 68, 68, 0.4);
-        color: #f87171;
+        color: #dc2626;
       }
       .verdict-title {
         font-weight: 700;
@@ -216,7 +216,7 @@ DELETE FROM audit_logs WHERE id=1;
         letter-spacing: 0.04em;
       }
       .verdict-sub {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.76rem;
         line-height: 1.45;
       }
@@ -237,11 +237,11 @@ DELETE FROM audit_logs WHERE id=1;
         border-bottom: 0;
       }
       .kv-row .k {
-        color: #7dd3fc;
+        color: #0284c7;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .kv-row .v {
-        color: #e2e8f0;
+        color: #1f2937;
       }
       .chain {
         display: flex;
@@ -259,12 +259,12 @@ DELETE FROM audit_logs WHERE id=1;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       .chain-node.ok {
-        color: #4ade80;
+        color: #16a34a;
         background: rgba(34, 197, 94, 0.1);
         border-color: rgba(34, 197, 94, 0.3);
       }
       .chain-node.bad {
-        color: #fca5a5;
+        color: #dc2626;
         background: rgba(239, 68, 68, 0.14);
         border-color: rgba(239, 68, 68, 0.45);
       }
@@ -279,45 +279,45 @@ DELETE FROM audit_logs WHERE id=1;
         overflow: auto;
       }
       table.data {
-        color: #cbd5e1;
+        color: #64748b;
         font-size: 0.78rem;
         margin-bottom: 0;
       }
       table.data thead th {
-        color: #7c8aa0;
+        color: #64748b;
         font-size: 0.66rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         border-bottom: 1px solid rgba(148, 163, 184, 0.18);
         position: sticky;
         top: 0;
-        background: #0d1524;
+        background: #f8fafc;
         z-index: 1;
       }
       table.data td {
         border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       }
       .action {
-        color: #93c5fd;
+        color: #2563eb;
         font-weight: 600;
         font-size: 0.74rem;
       }
       .reason {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.74rem;
         max-width: 26rem;
       }
       .hash {
-        color: #a5f3fc;
+        color: #0f766e;
         font-size: 0.7rem;
       }
       .sql {
-        background: #070b14;
+        background: #f8fafc;
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 0.5rem;
         padding: 0.55rem 0.7rem;
         margin: 0;
-        color: #a5f3fc;
+        color: #0f766e;
         font-size: 0.7rem;
         overflow: auto;
       }
@@ -329,10 +329,10 @@ DELETE FROM audit_logs WHERE id=1;
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #94a3b8;
+        color: #64748b;
       }
       .muted {
-        color: #7c8aa0;
+        color: #64748b;
       }
       .micro {
         font-size: 0.74rem;
@@ -345,7 +345,7 @@ DELETE FROM audit_logs WHERE id=1;
         color: #64748b;
       }
       code {
-        color: #fbbf24;
+        color: #b45309;
       }
     `,
   ],
