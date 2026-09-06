@@ -1012,6 +1012,8 @@ export class FlPipelinePanel {
   epsValues = signal<(number | null)[]>(EPS_PRESETS[1].values);
 
   private readonly openLogs = signal<Record<number, boolean>>({});
+  private readonly logTimers = new Map<number, ReturnType<typeof setInterval>>();
+  private destroyed = false;
 
   readonly status = computed<PipelineStatus | null>(() => this.svc.status());
   readonly dataset = computed(() => this.status()?.dataset ?? null);
@@ -1130,7 +1132,10 @@ export class FlPipelinePanel {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.svc.stopPolling();
+    for (const timer of this.logTimers.values()) clearInterval(timer);
+    this.logTimers.clear();
   }
 
   phaseMeta(phase: string) {
@@ -1173,15 +1178,23 @@ export class FlPipelinePanel {
   async toggleLog(clientId: number): Promise<void> {
     const open = !this.logOpen(clientId);
     this.openLogs.update((map) => ({ ...map, [clientId]: open }));
+    const existingTimer = this.logTimers.get(clientId);
+    if (existingTimer !== undefined) {
+      clearInterval(existingTimer);
+      this.logTimers.delete(clientId);
+    }
     if (open) {
       await this.svc.loadClientLog(clientId, 30);
+      if (this.destroyed || !this.logOpen(clientId)) return;
       const poll = setInterval(async () => {
         if (!this.logOpen(clientId)) {
           clearInterval(poll);
+          this.logTimers.delete(clientId);
           return;
         }
         await this.svc.loadClientLog(clientId, 30);
       }, 2500);
+      this.logTimers.set(clientId, poll);
     } else {
       this.svc.closeClientLog(clientId);
     }

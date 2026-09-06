@@ -14,6 +14,19 @@ PER_ROUND=${PER_ROUND:-3}
 ROUNDS=${ROUNDS:-20}
 PORT=${PORT:-8000}
 
+if ! [[ "$CLIENTS" =~ ^[0-9]+$ ]] || [ "$CLIENTS" -lt 2 ] || [ "$CLIENTS" -gt 8 ]; then
+    echo "CLIENTS must be an integer from 2 to 8" >&2
+    exit 1
+fi
+if ! [[ "$PER_ROUND" =~ ^[0-9]+$ ]] || [ "$PER_ROUND" -lt 2 ] || [ "$PER_ROUND" -gt "$CLIENTS" ]; then
+    echo "PER_ROUND must be an integer from 2 to CLIENTS" >&2
+    exit 1
+fi
+if ! [[ "$ROUNDS" =~ ^[0-9]+$ ]] || [ "$ROUNDS" -lt 1 ]; then
+    echo "ROUNDS must be a positive integer" >&2
+    exit 1
+fi
+
 mkdir -p logs results
 
 cleanup() {
@@ -29,7 +42,10 @@ echo "==> 1/5 Download real SNIPS + non-IID Dirichlet partition"
 $PY -m fl.data.prepare --clients "$CLIENTS" --alpha 0.5
 
 echo "==> 2/5 Start the app (FastAPI + in-process FL coordinator) on :${PORT}"
-$PY -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --log-level warning &
+# Keep the app's own coordinator URL aligned with PORT so the export step and
+# any supervised/manual clients never fall back to the default :8000.
+FL_SERVER_URL="http://127.0.0.1:${PORT}" \
+    $PY -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --log-level warning &
 SERVER=$!
 for _ in $(seq 1 60); do
     curl -fsS -m 2 "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1 && break
@@ -57,7 +73,7 @@ echo "==> 5/5 Export the global model to ONNX and benchmark on-device latency"
 # POST /assistant/command serves — different label spaces, so overwriting it
 # would make the assistant return confidently wrong intent names. Use
 # `--target live` only once FL trains on the assistant's own label space.
-$PY -m fl.deploy.export_onnx
+$PY -m fl.deploy.export_onnx --server-url "http://127.0.0.1:${PORT}"
 $PY -m fl.deploy.benchmark
 
 echo

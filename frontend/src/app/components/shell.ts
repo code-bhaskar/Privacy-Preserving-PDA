@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { ApiClient } from '../core/api-client.service';
@@ -215,7 +215,7 @@ const TABS: { id: TabId; label: string; icon: string; hint: string }[] = [
     `,
   ],
 })
-export class Shell {
+export class Shell implements OnDestroy {
   protected readonly auth = inject(AuthService);
   private readonly api = inject(ApiClient);
   private readonly data = inject(DataService);
@@ -223,10 +223,15 @@ export class Shell {
   readonly tabs = TABS;
   readonly activeTab = signal<TabId>('assistant');
   readonly health = signal<'ok' | 'down'>('down');
+  private readonly healthTimer: ReturnType<typeof setInterval>;
 
   constructor() {
     void this.checkHealth();
-    setInterval(() => void this.checkHealth(), 15000);
+    this.healthTimer = setInterval(() => void this.checkHealth(), 15000);
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.healthTimer);
   }
 
   tabIcon(name: string): string {

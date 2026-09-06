@@ -9,18 +9,18 @@ router = APIRouter(prefix="/api/v1/fl", tags=["Federated Learning (real)"])
 
 
 class RegisterReq(BaseModel):
-    client_id: int
-    num_samples: int
+    client_id: int = Field(ge=0)
+    num_samples: int = Field(gt=0)
 
 
 class StartRoundReq(BaseModel):
-    clients_per_round: int = 5
-    local_epochs: int = 2
-    lr: float = 0.5
-    clip_norm: float = 1.0
-    target_epsilon: Optional[float] = None
-    total_rounds_planned: int = 20
-    delta: float = 1e-5
+    clients_per_round: int = Field(5, ge=2, le=8)
+    local_epochs: int = Field(2, ge=1, le=10)
+    lr: float = Field(0.5, gt=0.0, le=5.0)
+    clip_norm: float = Field(1.0, gt=0.0)
+    target_epsilon: Optional[float] = Field(None, gt=0.0)
+    total_rounds_planned: int = Field(20, ge=1, le=1000)
+    delta: float = Field(1e-5, gt=0.0, lt=1.0)
 
 
 class PubKeyReq(BaseModel):

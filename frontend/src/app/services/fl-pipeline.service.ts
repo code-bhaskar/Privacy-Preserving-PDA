@@ -203,7 +203,7 @@ export class FlPipelineService {
       this.exportResult.set(res);
       this.notice.set(
         res.ok
-          ? 'Global federated model exported to deployed_models/intent_model.onnx.'
+          ? `Global federated model exported to ${res.artifact}; the served assistant model was left untouched.`
           : 'Export reported a failure — see the step output below.',
       );
       await this.refresh();

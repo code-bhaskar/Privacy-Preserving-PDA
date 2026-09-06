@@ -124,6 +124,11 @@ class _DatasetJob:
                                   text=True, timeout=1800)
             out = (proc.stdout or "") + (proc.stderr or "")
             code: Optional[int] = proc.returncode
+            if code == 0:
+                # The coordinator caches the evaluation rows for speed. A
+                # successful API-driven dataset replacement must invalidate
+                # that cache before the next round evaluates the new corpus.
+                coordinator.invalidate_dataset_cache()
         except Exception as exc:  # pragma: no cover - defensive
             out = f"{type(exc).__name__}: {exc}"
             code = -1
@@ -184,7 +189,21 @@ class ClientSupervisor:
 
     # ---------------- queries ---------------- #
 
+    def reap_dead(self) -> list[int]:
+        """Remove stopped supervised clients from the sampling pool.
+
+        Keep their records in ``_clients`` so the UI can still show exit codes
+        and logs, but do not let a naturally exited process be selected for a
+        future round.
+        """
+        with self._lock:
+            dead = [c.client_id for c in self._clients.values() if not c.alive()]
+            for cid in dead:
+                coordinator.unregister(cid)
+            return dead
+
     def list(self) -> list[dict]:
+        self.reap_dead()
         with self._lock:
             return [c.describe() for c in sorted(self._clients.values(),
                                                  key=lambda c: c.client_id)]
@@ -221,28 +240,56 @@ class ClientSupervisor:
               rounds: int = 1000) -> dict:
         server_url = (server_url or _server_url()).rstrip("/")
         count = max(1, min(int(count), MAX_SUPERVISED_CLIENTS))
+        self.reap_dead()
         if not dataset_status()["ready"]:
-            return {"spawned": [], "error":
+            return {"spawned": [], "errors": [], "error":
                     "fl_data is not prepared. Call POST /api/v1/federated/pipeline/dataset/prepare first."}
+
+        requested_ids = list(range(start_id, start_id + count))
+        available_ids = {s["client_id"] for s in dataset_status()["shards"]}
+        missing_ids = [cid for cid in requested_ids if cid not in available_ids]
+        if missing_ids:
+            return {
+                "spawned": [],
+                "errors": [
+                    f"client {cid} has no prepared shard (available ids: "
+                    f"{sorted(available_ids) or 'none'})" for cid in missing_ids
+                ],
+                "error": (
+                    f"Cannot spawn client ids {missing_ids}: the prepared dataset does "
+                    "not contain those shards. Prepare the dataset with at least "
+                    f"{max(requested_ids) + 1} clients or lower the client count."
+                ),
+            }
 
         spawned: list[dict] = []
         errors: list[str] = []
+        dropout_assigned = False
         with self._lock:
-            for cid in range(start_id, start_id + count):
-                if len(self._clients) >= MAX_SUPERVISED_CLIENTS:
+            for cid in requested_ids:
+                active_count = sum(1 for c in self._clients.values() if c.alive())
+                if active_count >= MAX_SUPERVISED_CLIENTS:
                     errors.append(f"supervisor cap reached ({MAX_SUPERVISED_CLIENTS})")
                     break
                 existing = self._clients.get(cid)
                 if existing is not None and existing.alive():
                     spawned.append(existing.describe())
+                    if drop_at and existing.drop_at == drop_at:
+                        dropout_assigned = True
                     continue
                 log_path = os.path.join(LOG_ROOT, f"client_{cid}.log")
+                # A dropout demonstration needs one missing contribution, not all
+                # contributions missing. The UI sends one spawn request for the
+                # whole group, so assign the requested phase to the first newly
+                # started process only.
+                client_drop_at = drop_at if drop_at and not dropout_assigned else None
                 cmd = [sys.executable, "-m", "fl.client.run",
                        "--client-id", str(cid),
                        "--server-url", server_url,
                        "--rounds", str(rounds)]
-                if drop_at:
-                    cmd += ["--drop-at", drop_at]
+                if client_drop_at:
+                    cmd += ["--drop-at", client_drop_at]
+                log_fh = None
                 try:
                     log_fh = open(log_path, "a", encoding="utf-8")
                     log_fh.write(f"\n=== spawned {time.strftime('%Y-%m-%d %H:%M:%S')} "
@@ -254,16 +301,24 @@ class ClientSupervisor:
                 except Exception as exc:
                     errors.append(f"client {cid}: {type(exc).__name__}: {exc}")
                     continue
+                finally:
+                    # The child keeps the inherited descriptor; the API process
+                    # must not retain one open descriptor per client.
+                    if log_fh is not None:
+                        log_fh.close()
                 client = _Client(client_id=cid, proc=proc, log_path=log_path,
-                                 started_at=time.time(), drop_at=drop_at,
+                                 started_at=time.time(), drop_at=client_drop_at,
                                  server_url=server_url, rounds=rounds)
                 self._clients[cid] = client
                 spawned.append(client.describe())
+                dropout_assigned = dropout_assigned or client_drop_at is not None
+        if drop_at and not dropout_assigned:
+            errors.append("dropout simulation was not assigned because all requested clients were already running")
         return {"spawned": spawned, "errors": errors}
 
     def stop(self, client_ids: Optional[list[int]] = None) -> dict:
         with self._lock:
-            targets = (list(self._clients.values()) if not client_ids
+            targets = (list(self._clients.values()) if client_ids is None
                        else [self._clients[c] for c in client_ids if c in self._clients])
             stopped = []
             for client in targets:
@@ -281,6 +336,7 @@ class ClientSupervisor:
                         client.proc.kill()
                 stopped.append(client.client_id)
                 self._clients.pop(client.client_id, None)
+                coordinator.unregister(client.client_id)
         return {"stopped": stopped}
 
     def stop_all(self) -> dict:
@@ -358,7 +414,15 @@ class SweepRunner:
         with self._lock:
             if self._state.running:
                 return {"started": False, "reason": "a sweep is already running"}
-            registered = len(coordinator.registered)
+            if not epsilons:
+                return {"started": False, "reason": "provide at least one epsilon value"}
+            supervisor.reap_dead()
+            with coordinator.lock:
+                phase = coordinator.phase
+                registered = len(coordinator.registered)
+            if phase not in (Phase.IDLE, Phase.DONE):
+                return {"started": False,
+                        "reason": f"a federated round is already in progress (phase={phase.value})"}
             if registered < clients_per_round:
                 return {"started": False,
                         "reason": f"need {clients_per_round} connected clients, "
@@ -375,19 +439,33 @@ class SweepRunner:
                 "clients_per_round": clients_per_round}
 
     def _wait_round(self, timeout_s: float) -> dict:
-        """Block until the coordinator finishes the round it is on."""
+        """Block until the coordinator finishes, recovering collection dropouts."""
         deadline = time.time() + timeout_s
-        while time.time() < deadline:
-            phase = coordinator.phase
-            if phase == Phase.DONE and coordinator.history:
-                return coordinator.history[-1]
+        recovery_requested = False
+        while True:
+            with coordinator.lock:
+                phase = coordinator.phase
+                history = list(coordinator.history)
+                collected = len(coordinator.masked)
+                participants = len(coordinator.participants)
+            if phase == Phase.DONE and history:
+                return history[-1]
             if phase == Phase.IDLE:
                 raise RuntimeError("coordinator went IDLE mid-round")
+            if time.time() >= deadline:
+                if (
+                    not recovery_requested
+                    and phase == Phase.COLLECT
+                    and coordinator.force_close_collection()
+                ):
+                    recovery_requested = True
+                    deadline = time.time() + timeout_s
+                    continue
+                raise TimeoutError(
+                    f"round did not finish within {timeout_s:.0f}s "
+                    f"(phase={phase.value}, collected={collected}/{participants})"
+                )
             time.sleep(0.2)
-        raise TimeoutError(f"round did not finish within {timeout_s:.0f}s "
-                           f"(phase={coordinator.phase.value}, "
-                           f"collected={len(coordinator.masked)}/"
-                           f"{len(coordinator.participants)})")
 
     def _run(self, epsilons: list, rounds: int, clients_per_round: int,
              local_epochs: int, clip_norm: float, lr: float, delta: float) -> None:

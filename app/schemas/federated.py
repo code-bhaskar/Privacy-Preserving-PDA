@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RoundRequest(BaseModel):
-    n_clients: int | None = None
-    rounds: int = 1
-    epsilon: float | None = 5.0     # None => no DP
+    n_clients: int | None = Field(None, ge=2, le=8)
+    rounds: int = Field(1, ge=1, le=50)
+    epsilon: float | None = Field(5.0, gt=0.0)     # None => no DP
     secure_aggregation: bool = True
 
 
@@ -30,9 +30,20 @@ class RoundResult(BaseModel):
 
 
 class ExperimentRequest(BaseModel):
-    epsilons: list[float | None] = [None, 10.0, 5.0, 1.0]
-    rounds: int = 5
-    n_clients: int = 5
+    epsilons: list[float | None] = Field(
+        default_factory=lambda: [None, 10.0, 5.0, 1.0],
+        min_length=1,
+        max_length=16,
+    )
+    rounds: int = Field(5, ge=1, le=50)
+    n_clients: int = Field(5, ge=2, le=8)
+
+    @field_validator("epsilons")
+    @classmethod
+    def validate_epsilons(cls, values: list[float | None]) -> list[float | None]:
+        if any(e is not None and e <= 0 for e in values):
+            raise ValueError("epsilon values must be positive or null for no DP")
+        return values
 
 
 class ExperimentPoint(BaseModel):

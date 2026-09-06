@@ -21,6 +21,11 @@ UI_PORT=${UI_PORT:-4200}
 CLIENTS=${CLIENTS:-3}
 FRONTEND=${FRONTEND:-dev}
 DEMO_EMAIL=${DEMO_EMAIL:-demo@ppda.io}
+
+if ! [[ "$CLIENTS" =~ ^[0-9]+$ ]] || [ "$CLIENTS" -gt 8 ]; then
+    echo "CLIENTS must be an integer from 0 to 8" >&2
+    exit 1
+fi
 DEMO_PASSWORD=${DEMO_PASSWORD:-DemoPass123!}
 HOST=${HOST:-0.0.0.0}
 # Resolved to an absolute path: the script `cd`s into frontend/ before using it,
@@ -62,16 +67,33 @@ $PY -m alembic upgrade head
 
 # --------------------------------------------------------------------------- #
 step "2/4 Federated learning dataset (real SNIPS, non-IID Dirichlet shards)"
-if [ -d fl_data/client_0 ]; then
-    echo "    fl_data/ already prepared — skipping download"
+DATASET_CLIENTS=${DATASET_CLIENTS:-6}
+[ "$CLIENTS" -gt "$DATASET_CLIENTS" ] && DATASET_CLIENTS="$CLIENTS"
+DATASET_READY=0
+if [ -f fl_data/meta.json ] && [ -d fl_data/client_0 ]; then
+    DATASET_READY=$($PY - <<PY
+import json
+try:
+    meta = json.load(open("fl_data/meta.json"))
+    print(int(meta.get("num_clients", 0) >= $DATASET_CLIENTS))
+except Exception:
+    print(0)
+PY
+)
+fi
+if [ "$DATASET_READY" = "1" ]; then
+    echo "    fl_data/ already prepared for at least ${DATASET_CLIENTS} clients — skipping download"
 else
-    $PY -m fl.data.prepare --clients 6 --alpha 0.5
+    $PY -m fl.data.prepare --clients "$DATASET_CLIENTS" --alpha 0.5
 fi
 
 # --------------------------------------------------------------------------- #
 step "3/4 Backend (FastAPI + in-process FL coordinator)"
 mkdir -p logs results deployed_models
-$PY -m uvicorn app.main:app --host "$HOST" --port "$PORT" --log-level warning &
+# Keep supervised clients on the same in-process coordinator when PORT is
+# overridden. Without this explicit value they would inherit a stale
+# FL_SERVER_URL from .env (usually :8000) and register with the wrong server.
+FL_SERVER_URL="$SERVER_URL" $PY -m uvicorn app.main:app --host "$HOST" --port "$PORT" --log-level warning &
 PIDS+=("$!")
 
 echo -n "    waiting for ${SERVER_URL}/health"
